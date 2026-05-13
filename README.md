@@ -39,7 +39,6 @@
 claude skills add https://github.com/Roloyty/weiwuming-wechat-formatter
 ```
 
-> 请将 `Roloyty` 替换为你的实际 GitHub 用户名。
 
 ### 方式二：手动放置到本地 Skill 目录
 
@@ -122,7 +121,7 @@ Copy-Item weiwuming-wechat-formatter/SKILL.md $env:USERPROFILE\.claude\skills\we
 ## 相关项目
 
 - **「谓无名」公众号编辑器**：本 Skill 配套的在线排版工具（HTML 单页应用），支持实时预览和一键复制到公众号后台。
-
+https://www.axureshow.com/project/kurPMyuE/
 ---
 
 ## License
