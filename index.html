@@ -2023,7 +2023,10 @@
                 let parts = content.split('|');
                 if (parts.length >= 3) {
                     result.push(`<section class="person-info">`);
-                    result.push(`<p class="person-photo"><img src="${parts[0]}" /></p>`);
+                    // 图片 URL 留空 → 纯文字卡片，不输出空 src 的 img（微信里会显示裂图）
+                    if (parts[0].trim() !== '') {
+                        result.push(`<p class="person-photo"><img src="${parts[0]}" /></p>`);
+                    }
                     result.push(`<p class="person-marker"><span>▲</span></p>`);
                     result.push(`<p class="person-name">${parts[1]}</p>`);
                     for (let i = 2; i < parts.length; i++) {
