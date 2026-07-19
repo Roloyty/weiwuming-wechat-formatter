@@ -1,129 +1,180 @@
-# 谓无名公众号排版助手 (weiwuming-wechat-formatter)
+# 谓无名公众号排版助手
 
-一个专为 **「谓无名」公众号** 设计的 Claude Skill，用于将 Word 文档（.doc/.docx）或粘贴文本自动转换为公众号编辑器兼容的 Markdown 排版格式。
+`weiwuming-wechat-formatter` 是一套面向「谓无名」公众号编辑器的 AI Agent Skill。它把 Word 文档或粘贴文本转换成编辑器专用 Markdown，并通过编辑器同源渲染流程生成可粘贴到微信公众号后台的内联样式 HTML。
 
----
+## 主要能力
 
-## 功能介绍
+- 解析 `.docx` 的标题、段落、样式、表格、脚注、尾注和图片关系。
+- 在安装 LibreOffice 时自动将 legacy `.doc` 转换为 `.docx`。
+- 生成编者按、章节标题、注释、作者简介、人物卡片、书籍卡片和延伸阅读等编辑器语法。
+- 将图片交给用户自己的 PicGo Server，使用用户在 PicGo 中配置并选中的图床。
+- 使用随 Skill 打包的编辑器快照和本地 `marked`、`jsdom` 生成微信粘贴版 HTML。
+- 校验公网图片 URL、语法块配对和未渲染的语法残留。
+- 将疑似错别字、标点和合规问题作为校对提醒列出，不静默修改原文。
 
-- **Word 文档解析**：自动提取 `.docx` 文件内容，保留段落结构、标题层级、加粗/斜体样式、表格、脚注和图片关系。
-- **legacy .doc 支持**：通过 LibreOffice 自动转换旧版 `.doc` 为 `.docx` 后解析。
-- **专用语法转换**：将原文转换为「谓无名」编辑器支持的自定义 Markdown 语法（编者按、注释、书籍卡片、作者简介等）。
-- **内容忠实原则**：不改写、不润色、不编造信息，严格保留原文措辞、标点、人名、日期和引用。
-- **校对提醒**：自动识别可能的错别字、标点混用、政治/合规风险，并在排版结果后单独列出。
+## 工作流程
 
----
+```text
+Word / 文本
+    ↓
+提取并分析文章结构
+    ↓
+生成谓无名 Markdown
+    ↓
+本地图片 → PicGo Server → 用户自选图床 → 公网 URL
+    ↓
+编辑器同源渲染与校验
+    ↓
+Markdown + 微信粘贴版 HTML + 浏览器预览
+```
 
 ## 仓库结构
 
-```
+```text
 .
-├── SKILL.md                  # Claude Skill 定义文件
-├── README.md                 # 本说明文件
+├── SKILL.md                       # Skill 工作规则
+├── README.md                      # 项目介绍与使用说明
+├── assets/
+│   └── editor-index.html          # 谓无名编辑器快照，作为渲染兜底
+├── references/
+│   ├── image-host.md              # PicGo Server 配置说明
+│   └── syntax_rules.md            # 编辑器语法参考
 ├── scripts/
-│   ├── extract_docx.py       # Word 文档提取脚本（纯 Python 标准库，无需 python-docx）
-│   └── make_wechat_article.py # 文章生成辅助脚本
-└── references/
-    └── syntax_rules.md       # 「谓无名」编辑器完整语法规则参考
+│   ├── extract_docx.py            # Word 结构提取
+│   ├── upload_image.py            # PicGo Server API 上传客户端
+│   └── render_html.js             # 编辑器同源 HTML 渲染与校验
+├── tests/
+│   └── test_upload_image.py        # PicGo API 客户端模拟服务测试
+├── package.json
+└── package-lock.json
 ```
 
----
+## 环境要求
 
-## 安装方法（Claude Code 用户）
+- Python 3.9+，只使用标准库。
+- Node.js 18+。
+- LibreOffice，可选，仅处理 `.doc` 时需要。
+- PicGo GUI 2.2+ 或提供兼容 `/upload`、`/heartbeat` 接口的 PicGo Server。
 
-### 方式一：通过 URL 直接添加 Skill
-
-在 Claude Code 中执行以下命令，即可让当前 Agent 加载并使用本 Skill：
+安装 Node 依赖：
 
 ```bash
-claude skills add https://github.com/Roloyty/weiwuming-wechat-formatter
+npm ci
 ```
 
-> 请将 `Roloyty` 替换为你的实际 GitHub 用户名。
+## 安装 Skill
 
-### 方式二：手动放置到本地 Skill 目录
-
-1. 克隆本仓库到本地：
+克隆仓库：
 
 ```bash
 git clone https://github.com/Roloyty/weiwuming-wechat-formatter.git
 ```
 
-2. 将 `SKILL.md` 复制到 Claude Code 的 skills 目录：
+然后按所用 Agent 的 Skill 加载方式安装本目录。Claude Code 用户也可以尝试：
 
 ```bash
-# macOS / Linux
-cp weiwuming-wechat-formatter/SKILL.md ~/.claude/skills/wechat-formatter.md
-
-# Windows (PowerShell)
-Copy-Item weiwuming-wechat-formatter/SKILL.md $env:USERPROFILE\.claude\skills\wechat-formatter.md
+claude skills add https://github.com/Roloyty/weiwuming-wechat-formatter
 ```
 
----
+## 配置 PicGo 图床
 
-## 使用方法
+本项目不再直连某个固定图床，也不保存图床 AK、SK、Token 或 Bucket。用户需要先在 PicGo 中配置自己的图床并将其设为当前图床。
 
-加载 Skill 后，在 Claude Code 中直接上传 Word 文件或粘贴文章文本，Agent 会自动：
+PicGo GUI 默认上传接口：
 
-1. **识别输入类型**：区分 `.docx` / `.doc` / 纯文本
-2. **提取文档结构**：解析标题、段落、样式、表格、注释
-3. **应用排版语法**：转换为 `### 标题 / 作者`、`## 小标题`、`---[dot]`、`>>>` 编者按、`---[notes]` 注释等专用标记
-4. **输出排版结果**：返回可直接粘贴到「谓无名」编辑器的 Markdown 文本
+```text
+http://127.0.0.1:36677/upload
+```
 
-### 示例对话
+默认地址可以直接使用。若用户修改了 PicGo Server 地址，请创建 `~/.weiwuming/image-host.json`：
 
-**用户**：
-> 帮我排版这篇文章，文件是 `article.docx`
+```json
+{
+  "picgo": {
+    "api_url": "http://127.0.0.1:36677/upload",
+    "server_secret": "",
+    "timeout": 90
+  }
+}
+```
 
-**Agent（加载本 Skill 后）**：
-> 1. 执行 `python scripts/extract_docx.py article.docx` 提取内容
-> 2. 分析结构并应用编辑器语法
-> 3. 输出排版后的 Markdown + 校对提醒
+也可以使用环境变量：
 
----
+```text
+PICGO_API_URL=http://127.0.0.1:36677/upload
+PICGO_SERVER_SECRET=可选的服务密钥
+PICGO_TIMEOUT=90
+```
 
-## 「谓无名」编辑器语法速查
+首次使用先检查接口：
+
+```bash
+python scripts/upload_image.py --check
+```
+
+上传图片：
+
+```bash
+python scripts/upload_image.py images/cover.jpg
+python scripts/upload_image.py --json images/*.jpg
+```
+
+脚本向 PicGo 发送官方格式的 JSON 请求：
+
+```json
+{"list":["图片绝对路径"]}
+```
+
+PicGo 返回的公网 URL 会写入书籍卡片、人物卡片等语法块。详细配置和故障排查见 [`references/image-host.md`](references/image-host.md)。API 依据为 [PicGo GUI Server 文档](https://docs.picgo.app/gui/guide/advance) 和 [PicGo Core API Reference](https://docs.picgo.app/core/api/)。
+
+## 脚本用法
+
+### 提取 Word 结构
+
+```bash
+python scripts/extract_docx.py article.docx
+```
+
+脚本输出 JSON，供 Agent 根据样式、段落、表格和注释信息生成谓无名 Markdown。
+
+### 渲染微信 HTML
+
+```bash
+node scripts/render_html.js article.md --preview
+```
+
+输出：
+
+- `article.html`：微信粘贴版内联样式 HTML。
+- `article.preview.html`：浏览器预览页。
+
+渲染器会拒绝本地图片路径、未成对语法块和无法识别的残留语法。
+
+## 常用编辑器语法
 
 | 语法 | 用途 |
 |---|---|
-| `### 标题 / 作者` | 主标题（含作者名） |
-| `## 小标题` | 章节小标题 |
-| `---[dot]` | 视觉分隔线 |
-| `>>>` ... `<<<` | 编者按 |
-| `> 原文` | 引用/blockquote |
-| `---[notes]` ... `---[/notes]` | 注释区域，`^[① 内容]` 为条目 |
-| `[book:封面URL|书名|作者|出版社|年份]` | 中文书籍卡片 |
-| `[enbook:封面URL|Title|Author|Publisher|Year]` | 英文书籍卡片 |
-| `[jpbook:封面URL|書名|著者|出版社|年]` | 日文书籍卡片 |
-| `---[bio-title:作者简介]` ... `---[/bio]` | 作者简介区域 |
-| `[staff:姓名|职位]` | 工作人员署名 |
-| `---[follow]` ... `---[/follow]` | 关注引导语 |
+| `### 标题 / 作者` | 主标题和作者 |
+| `## 小标题` | 章节标题 |
+| `---[dot]` | 标题视觉分隔 |
+| `>>> 内容` ... `<<<` | 编者按 |
+| `---[notes]` ... `---[/notes]` | 注释区域 |
+| `[book:封面URL\|书名\|作者\|出版社\|年份]` | 中文书籍卡片 |
+| `[universal:图片URL\|名称\|简介]` | 人物、事件、图片等通用卡片 |
+| `---[reading-title:延伸阅读]` ... `---[/reading]` | 延伸阅读 |
+| `---[bio-title:作者简介]` ... `---[/bio]` | 作者简介 |
+| `[staff:姓名\|职位]` | 工作人员署名 |
+| `---[follow]` ... `---[/follow]` | 关注引导 |
 
-完整语法规则请参考 [`references/syntax_rules.md`](references/syntax_rules.md)。
+完整规则见 [`references/syntax_rules.md`](references/syntax_rules.md)。
 
----
+## 图片与安全说明
 
-## 依赖环境
-
-- **Python 3**（标准库即可，无需额外安装 `python-docx`）
-- **LibreOffice**（可选，仅在处理 legacy `.doc` 文件时需要）
-
----
-
-## 注意事项
-
-1. **不编造内容**：Skill 不会主动搜索网络来补全缺失的书籍、人物或出版信息。
-2. **图片处理**：Word 内嵌图片为本地路径，不是图床 URL，因此不会直接输出到正文。如需插入图片，请先在图床上传后提供链接。
-3. **封面缺失**：书籍卡片若缺少封面 URL，请保留空字段（如 `[book:|书名|作者|出版社|年份]`），编辑器会自动显示空白封面占位图。
-4. **校对独立**：所有疑似问题（错别字、标点、合规风险）均在 `校对提醒` 中列出，不会静默修改原文。
-
----
-
-## 相关项目
-
-- **「谓无名」公众号编辑器**：本 Skill 配套的在线排版工具（HTML 单页应用），支持实时预览和一键复制到公众号后台。
-
----
+- Word 中的 `word/media/image1.png` 是文档包内部路径，不是公网 URL，不能直接写入微信文章。
+- 远程 `http(s)` 图片会直接沿用；本地图片才会调用 PicGo。
+- PicGo Server 建议只监听 `127.0.0.1`。若监听局域网地址，请启用 shared secret 和防火墙限制。
+- PicGo 图床凭据只保存在 PicGo 自身配置中，不应提交到本仓库。
+- 上传后的图片通常可以公网访问，请勿上传隐私或未公开资料。
 
 ## License
 

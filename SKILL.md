@@ -1,29 +1,200 @@
-﻿---
+---
 name: wechat-formatter
 description: |
   Convert uploaded .doc/.docx files or pasted text into WeChat article markdown using the "谓无名" editor syntax.
   Use when the user uploads Word documents, pastes article text, asks to format for WeChat, add syntax markers,
   排版文章, or convert academic/articles into the custom WeChat editor markdown. The skill preserves source content,
-  extracts Word structure, and produces editor-ready markdown without inventing missing information or image URLs.
+  extracts Word structure, and produces editor-ready markdown plus paste-ready rendered HTML without inventing
+  missing information or image URLs.
 compatibility:
-  - Python 3 standard library for .docx OOXML extraction
+  - Python 3 standard library for .docx OOXML extraction and PicGo Server API upload
+  - Node.js >= 18 with bundled node_modules (jsdom, marked) for HTML rendering
   - LibreOffice/soffice for legacy .doc normalization when available
   - Codex file read/write capabilities
 ---
 
 # WeChat Article Formatter
 
-Convert Word documents and pasted text into markdown for the "谓无名" WeChat article editor.
+Convert Word documents and pasted text into markdown for the "谓无名" WeChat article editor, then render the markdown into paste-ready WeChat HTML.
+
+**Deliverables — every job produces exactly two files, both mandatory:**
+
+1. `<文章名>.md` — 谓无名-syntax markdown (the editable source of truth)
+2. `<文章名>.html` — paste-ready inline-styled HTML, rendered from the .md by `node scripts/render_html.js` (never hand-written)
 
 ## Core Rules
 
 - Preserve the uploaded document's content, order, wording, punctuation, names, dates, and citations as faithfully as possible.
 - Do not rewrite, polish, summarize, expand, translate, or fact-complete the article unless the user explicitly asks.
-- Do not search online to fill missing book/person/publication data unless the user explicitly asks for research or fact completion.
+- Do not search online to fill missing book/person/publication data — **exception: keyword blocks and extended reading recommendations always require web search** to find accurate person, book, event, and photo information.
 - Do not invent placeholders such as `https://placeholder`, `[待确认]`, or `[信息缺失]` in the formatted article.
 - If an image has no usable hosted URL, do not output standalone image syntax for it.
-- For book/reading-book blocks that are already present in the source but lack a cover URL, leave the image field empty, e.g. `[book:|书名|作者|出版社|年份]`; the editor will render its blank cover placeholder.
+- **Keyword block images are downloaded to a local `images/` folder, then uploaded through the user's PicGo Server API** via `python scripts/upload_image.py <图片...>`. PicGo uses the image host selected and configured by the user; this skill stores no image-host credentials. Fill the returned public URL into the syntax block (e.g. `[book:https://cdn.example.com/book.jpg|书名|作者|出版社|年份]`). If PicGo is unavailable or upload fails, leave the image field empty and report it in `校对提醒`.
+- For book/reading-book blocks that are already present in the source but lack a cover URL, search + download + upload through PicGo as above; only if no image can be found, leave the image field empty (e.g. `[book:|书名|作者|出版社|年份]`).
 - If typos, grammar issues, punctuation issues, or political/compliance risks are found, keep the formatted article faithful to the source and report the issues after the markdown under `校对提醒`.
+
+### 编者按（Editor's Note）
+
+- **Every article must begin with a 编者按** placed after the `### 标题 / 作者` line and before the first `##` section heading.
+- **Syntax format**: `>>> ` (note the trailing space) must be on the same line as the content start, and `<<<` must be on a separate line at the end. **The space after `>>>` is mandatory** for the editor to recognize the block.
+  - Correct:
+    ```
+    >>> 编者按内容...
+    <<<
+    ```
+  - Incorrect:
+    ```
+    >>>编者按内容...
+    ```
+  - Also incorrect:
+    ```
+    >>>
+    编者按内容...
+    ```
+- The 编者按 should be approximately 500 characters (Chinese) and must:
+  1. Summarize the main content and key arguments of the article.
+  2. Provide a brief editorial commentary — highlighting significance, raising questions, or connecting to broader context.
+- Write the 编者按 in a tone consistent with the "谓无名" editorial style: thoughtful, measured, and intellectually engaging.
+- In the final report, state the 编者按 character count so the user can confirm it is ~500.
+
+### Article Structure Order
+
+Every article must follow this order:
+
+1. **编者按** — `>>> ` / `<<<`, ~500 chars, after `### 标题 / 作者`
+2. **正文** — body text with keyword blocks (books, persons, etc.) inline
+3. **目录** (if any) — `---[toc]` ... `---[/toc]`
+4. **注释** (if any) — `---[notes]` ... `---[/notes]`
+5. **来源说明** — `---[note]` ... `---[/note]` block with:
+   - 本次推送内容为《书名》一书的"章节"。
+   - 感谢XXX授权转载。
+   - 图片源于作者/互联网。
+6. **作者简介** — `---[bio-title:作者简介]` ... `---[/bio]`
+7. **译者简介** (if any) — `---[bio-title:译者简介]` ... `---[/bio]`
+8. **延伸阅读** — `---[reading-title:延伸阅读]` ... `---[/reading]`
+9. **末尾固定内容** — `[staff:...]` + `---[follow]` ... `---[/follow]` + profile
+
+### No Separator Before Special Blocks
+
+The following blocks use their own opening syntax (e.g. `---[note]`, `---[bio-title:]`, etc.) as visual markers. **Do NOT add an extra `---` horizontal rule line before them**:
+
+- `---[toc]` (目录)
+- `---[notes]` (注释)
+- `---[note]` (来源说明)
+- `---[bio-title:作者简介]`
+- `---[bio-title:译者简介]`
+- `---[reading-title:延伸阅读]`
+
+These blocks should appear directly after the preceding content, without any intervening `---` line.
+
+### ## Heading Rule
+
+- `##` section headings must always be followed by `---[dot]`. The `##` and `---[dot]` are bound together as a single unit.
+- Every `##` heading line must be immediately followed by a separate `---[dot]` line.
+- `###` subheadings do NOT have `---[dot]` after them. Only `##` headings use `---[dot]`.
+
+---
+
+### Keyword Blocks and Extended Reading
+
+- **Search for key information mentioned in the article**: identify important persons, books, events, movies, and TV shows referenced in the text.
+- **Use `web-access` skill for all web searches and page fetching.** Search strategy:
+  - For discovering information sources and keyword searches: use **WebSearch** via web-access skill
+  - For extracting specific information from known URLs: use **WebFetch** via web-access skill
+  - For non-public content or sites requiring login: use **browser CDP** via web-access skill
+  - Always prioritize first-hand sources (official websites, original documents) over secondary reporting
+
+#### Selection & Listing Rules（列举规则）
+
+- **人物 `[universal:]` blocks**: pick only **substantive** persons — those the article discusses, quotes, or builds an argument on. Skip passing name-drops, and skip a person who is already represented by their own book's `[book:]` block in the same paragraph. **Target 3–6 person blocks per article** (fewer is fine for short articles); insert each at the paragraph of first mention only, never twice for the same person.
+- **书籍 blocks**: every book the article substantively discusses gets one block at first mention — `[book:]` for Chinese editions, `[enbook:]` for English, `[jpbook:]` for Japanese. Never duplicate a book.
+- **延伸阅读**: recommend **2–5 books**, thematically tied to the article's subject. Must NOT repeat any book already in the article body. Prefer in-print Chinese editions (豆瓣 has an entry); order from most to least directly related.
+- In the final report, list what was chosen and why (one line each), so the user can veto or swap entries.
+
+#### 信息获取渠道（persons / books / images, in priority order)
+
+- **人物信息（identity, dates, 身份简介）**:
+  1. **Wikipedia** — match language to the person: 中文人物→zh.wikipedia, 日本人物→ja.wikipedia, 西方人物→en.wikipedia. Cross-read a second language edition when dates/titles matter.
+  2. **Kotobank (kotobank.jp)** — authoritative for Japanese scholars/writers not well covered by Wikipedia.
+  3. **机构页面** — university faculty pages, publisher author pages (最权威的在职头衔来源).
+  4. **百度百科 / 豆瓣作者页** — fallback for Chinese figures; treat as secondary, verify against one of the above.
+  - The 简介 field format: `身份头衔，代表作或主要贡献` — factual, ≤ 40 chars, no honorifics. **Birth/death years and titles must be confirmed by at least one authoritative source**; if sources conflict, pick the more authoritative one and note the conflict in `校对提醒`.
+- **人物照片**:
+  1. **Wikimedia Commons** (`https://upload.wikimedia.org/wikipedia/commons/...`) — check the person's Wikipedia infobox image first.
+  2. **Kotobank / 机构页 / publisher author page** portrait.
+  3. **Amazon (author page) / 豆瓣作者页** photo.
+  - Prefer a clear, front-facing, watermark-free portrait; skip group photos.
+- **书籍信息与封面**:
+  1. **豆瓣 (Douban)** — for Chinese-edition books, movies, TV, music. After obtaining item_id, construct cover URL:
+     - Books: `https://dou.img.lithub.cc/book/<id>.jpg`
+     - Movies: `https://dou.img.lithub.cc/movie/<id>.jpg`
+     - TV shows: `https://dou.img.lithub.cc/tv/<id>.jpg`
+     - Music: `https://dou.img.lithub.cc/music/<id>.jpg`
+  2. **日本亚马逊 (Amazon.co.jp)** — for Japanese books. Cover URL patterns: `https://images-fe.ssl-images-amazon.com/images/I/<image_id>.jpg` or `https://m.media-amazon.com/images/I/<image_id>.jpg`. Also useful for person photos of Japanese authors.
+  3. **出版社官网 / Google Books** — for English books and to verify edition metadata (出版社、年份、译者).
+  - Book metadata (作者/译者/出版社/年份) must match the actual edition whose cover is used; verify on the source page, not from memory.
+
+#### Image Download + PicGo Upload
+
+- **Download** each image to the `images/` directory under the same project folder using Bash (`curl -L -o` or PowerShell `Invoke-WebRequest`).
+- **Naming convention** (use Chinese name, remove punctuation `《》·：` etc., keep alphanumeric and CJK):
+  - Book covers: `book_<书名>.jpg` — e.g. `book_浮世通鉴日本大众文化史.jpg`
+  - Person photos: `person_<姓名>.jpg` — e.g. `person_鲁迅.jpg`
+  - Movie/TV posters: `movie_<片名>.jpg` — e.g. `movie_千与千寻.jpg`
+  - Extended reading covers: `reading_<书名>.jpg` — e.g. `reading_菊与刀.jpg`
+  - If filename conflicts occur, append `_2`, `_3` etc.
+- **Upload through PicGo** after all downloads finish, in one batch:
+  ```bash
+  python <SKILL_ROOT>/scripts/upload_image.py images/*.jpg
+  # 每行输出「本地路径<TAB>公网URL」；--json 输出 JSON 映射
+  ```
+  - Users must configure and select their own image host in PicGo, then keep PicGo Server running. The default API is `http://127.0.0.1:36677/upload`; override it with `PICGO_API_URL` or `~/.weiwuming/image-host.json` (see `references/image-host.md`).
+  - Run `python <SKILL_ROOT>/scripts/upload_image.py --check` before the first upload. If PicGo Server authentication is enabled, configure `PICGO_SERVER_SECRET` or `picgo.server_secret` in the local config file.
+  - Remote http(s) URLs passed in are returned as-is. Local-image results are cached in `~/.weiwuming/picgo-upload-cache.json`, isolated by API endpoint and content hash.
+  - Exit code 2 = invalid API configuration or PicGo unavailable → leave image fields empty and tell the user to check PicGo Server and `references/image-host.md`.
+- **Image field in syntax**: fill the returned public URL into the image/cover field:
+  - `[book:<公网URL>|书名|作者|出版社|年份]`
+  - `[universal:<公网URL>|姓名|身份/简介]`
+  - `[reading-book:书名|作者|译者|<公网URL>]`
+  - If upload failed or no image was found, leave the field empty.
+- **Search timeout handling**: if a search takes too long, times out, or returns no results after reasonable attempts, leave the image URL field empty (no download needed) and report in `校对提醒`.
+
+#### Block Syntax Details
+
+- Insert the appropriate syntax block **immediately after the paragraph where the keyword is first mentioned**:
+  - Persons → `[universal:<URL>|姓名|身份/简介]`
+  - Books → `[book:<URL>|书名|作者|出版社|年份]` / `[enbook:<URL>|Title|Author|Publisher|Year]` / `[jpbook:<URL>|書名|著者|出版社|年]`
+    - **Field separator rule**: each field MUST be separated by `|`, do NOT use `、` or other delimiters within fields.
+    - **Book name**: do NOT add 《》 or similar punctuation around the book name.
+    - Example: `[book:http://.../weiwuming/a1b2c3d4.jpg|浮世通鉴：日本大众文化史|日文研项目组 编著，党蓓蓓 译|北京大学出版社|2025]`
+    - Incorrect: `[book:xxx.jpg|《书名》|作者，出版社，年份]` (missing separators and extra punctuation)
+  - Movies/TV → `[universal:<URL>|片名|导演/主演/年份/简介]` — search **Douban** first for the poster.
+  - Events → `[universal:|事件名称|简要说明]`
+  - Photos → `[universal:<URL>|图说第一行|图说第二行]`
+- **Extended reading format**: `[reading-book:书名|作者信息|译者信息|封面URL]` — fields MUST be separated by `|`; last field = uploaded cover URL (empty if unavailable).
+  - **Each reading entry MUST be separated by a blank line.** No two `[reading-book:...]` lines should be adjacent without an empty line between them.
+  - **译著 (translated works)**: author field = `[国家] 作者名 著` (e.g. `[美] 约翰·W·道尔 著`), translator field = `译者名 译` (e.g. `胡博 译`). Full example: `[reading-book:拥抱战败|[美] 约翰·W·道尔 著|胡博 译|http://.../weiwuming/xxxx.jpg]`
+  - **原著 (original works)**: author field = `作者名`, translator field empty. Full example: `[reading-book:韩国现代政治史|咸在凤||]`
+- All searched data must be factual. If uncertain, report in `校对提醒`.
+
+### Staff and Fixed Footer
+
+- The last section of every article must contain **two `[staff:...]` entries**:
+  1. `[staff:作者姓名|编辑]` — filled with the actual author name(s) from the source.
+  2. `[staff:春生、|审校]` — the 审校 (reviewer) always defaults to **春生、**.
+- After the staff entries, **every article must include the fixed follow section**:
+  ```
+  ---[follow]
+
+  东亚视角 全球视野
+
+  寻找东亚论述的"虫洞"与"黑洞"
+
+  点击下图关注"谓无名"
+
+  ---[/follow]
+  ```
+- This footer block is mandatory for all articles, regardless of whether the source contains it.
 
 ## Workflow
 
@@ -39,27 +210,44 @@ Convert Word documents and pasted text into markdown for the "谓无名" WeChat 
 
 3. Apply editor syntax. Read `references/syntax_rules.md` when exact syntax is needed.
    - Main article title or chapter heading: `### 标题 / 作者` when the source clearly contains both.
-   - Section heading: `## 标题`.
-   - Major visual divider from source: `---[dot]`.
-   - Editor note: wrap source editor note content with `>>>` and `<<<`.
+   - **编者按**: write ~500-char editorial summary/commentary with `>>> ` (trailing space mandatory) on the same line as content start, placed after `### 标题 / 作者` and before the first `##` heading.
+   - Section heading: `## 标题` followed by `---[dot]` (always bound together).
    - Blockquote: `> 原文`.
    - Notes: `---[notes]` ... `---[/notes]`; note entries use `^[① 内容]`.
-   - Bio: `---[bio-title:作者简介]`, `[bio:原文]`, `---[/bio]`.
-   - Staff credit: `[staff:姓名|职位]`.
-   - Follow section: use `---[follow]` ... `---[/follow]` only when source content contains a follow prompt or the fixed footer is required by the local editor workflow.
+   - Source note: `---[note]` ... `---[/note]`. **No extra `---` line before this block.**
+   - Bio: `---[bio-title:作者简介]`, `[bio:原文]`, `---[/bio]`. **No extra `---` line before this block.**
+   - **Keyword blocks**: apply the Selection & Listing Rules above; search via `web-access`, download to `images/`, upload through the user's PicGo Server via `scripts/upload_image.py`, and insert `[book:<URL>|...]` / `[universal:<URL>|...]` blocks at first mention.
+   - **Extended reading**: 2–5 non-duplicate related books, `---[reading-title:延伸阅读]` ... `---[/reading]` above staff. **No extra `---` line before this block.**
+   - Staff credit: `[staff:作者姓名|编辑]` + `[staff:春生、|审校]`.
+   - Follow section: the fixed `---[follow]` ... `---[/follow]` footer is mandatory.
 
 4. Handle images.
-   - Extracted Word image relationships are local package targets, not hosted URLs.
-   - Do not emit `![alt](...)`, `[bio-img:...]`, or `[universal:...]` for local package targets unless the user provides a real hosted URL.
-   - If the source text already contains a hosted image URL, preserve it in the appropriate syntax.
-   - If a book block is needed and there is no cover URL, leave the first image field empty rather than using a placeholder URL.
-   - At the end, report omitted images by position or nearby paragraph when possible.
+   - Extracted Word image relationships are local package targets, not hosted URLs — never emit them as article image URLs.
+   - If the source text already contains a hosted image URL, download it to `images/` (it will pass through upload unchanged if already public).
+   - Follow **Image Download + Upload** above; fill returned URLs into syntax blocks.
+   - At the end, report all downloaded images with their filenames, uploaded URLs, and corresponding keywords.
 
-5. Validate before delivery.
+5. Save the markdown deliverable as `<文章名>.md` in the project folder.
+
+6. **Render the HTML deliverable** (mandatory):
+   ```bash
+   node <SKILL_ROOT>/scripts/render_html.js <文章名>.md --preview
+   ```
+   - Produces `<文章名>.html` (WeChat paste-ready, inline-styled — identical to the editor's 复制 output) and `<文章名>.preview.html` (open in a browser to visually verify).
+   - The renderer loads `编辑器最终版/index.html` and runs the editor's own pipeline — **never hand-write or post-edit the .html**; to change styles, change the editor file. Editor lookup order: `--editor` arg → env `WEIWUMING_EDITOR_HTML` → `~/.weiwuming/render.json` (`editor_html`) → `F:\py\编辑器最终版\index.html` → bundled `assets/editor-index.html` snapshot.
+   - **Exit code must be 0.** The renderer validates: all `<img>` are public http(s) URLs, every syntax block in the .md actually rendered, no unparsed syntax residue (e.g. `---[`, `<<<`), `>>> ` has its space. If it exits 1, fix the .md and re-render — do not deliver a failing pair.
+   - Re-render after ANY edit to the .md, so the two deliverables never diverge. Rendering is idempotent: same .md → byte-identical .html.
+
+7. Validate before delivery.
+   - `render_html.js` exited 0 (this covers image URLs, block pairing, and syntax residue mechanically).
    - No placeholder URLs or invented missing-data markers are present.
-   - No unsupported local image paths are emitted as article images.
-   - Syntax markers are paired: `>>>`/`<<<`, `---[notes]`/`---[/notes]`, `---[reading-title:]`/`---[/reading]`, `---[bio-title:]`/`---[/bio]`.
-   - The result follows the source document order.
+   - Every filled image field is a real public URL returned by the user's PicGo Server through `upload_image.py` (never a local path, never an invented URL); fields without a successful upload are empty.
+   - All downloaded images exist in `images/` with correct naming.
+   - Syntax markers are paired: `>>> `/`<<<`, `---[notes]`/`---[/notes]`, `---[note]`/`---[/note]`, `---[reading-title:]`/`---[/reading]`, `---[bio-title:]`/`---[/bio]`.
+   - **No extra `---` horizontal rule** before `---[note]`, `---[bio-title:]`, `---[reading-title:]`, `---[toc]`, or `---[notes]` blocks.
+   - The article follows the correct structure order: 编者按 → 正文 → 目录(如有) → 注释(如有) → 来源说明 → 作者简介 → 译者简介(如有) → 延伸阅读 → 末尾固定内容.
+   - Every `##` heading is followed by `---[dot]`.
+   - Person blocks 3–6 and unique; reading list 2–5, no duplicates with body books.
    - Suspected typos, grammar, punctuation, and political/compliance issues are listed separately, not silently corrected.
 
 ## Reporting Format
@@ -67,9 +255,23 @@ Convert Word documents and pasted text into markdown for the "谓无名" WeChat 
 Return:
 
 ```markdown
-排版结果：
+交付文件：
+- 📄 `<文章名>.md` — 谓无名语法 markdown
+- 📄 `<文章名>.html` — 微信粘贴版（render_html.js 校验通过 ✓）
+- 👀 `<文章名>.preview.html` — 浏览器预览
 
-<editor-ready markdown>
+编者按：约 NNN 字。
+
+人物/书目选择（可替换，告诉我即可）：
+- [universal:] 鲁迅 — 正文第二节重点讨论其杂文观 → 照片源：Wikimedia Commons
+- [book:] 浮世通鉴 — 文章主推书目 → 封面源：豆瓣
+- 延伸阅读：拥抱战败（同主题战后史）、菊与刀（经典参照）…
+
+图片处理结果：
+- ✅ `images/book_书名.jpg` → 来源：豆瓣 → 已上传 `http://.../weiwuming/<hash>.jpg` → [book:<URL>|书名|...]
+- ✅ `images/person_姓名.jpg` → 来源：Wikimedia Commons → 已上传 → [universal:<URL>|姓名|...]
+- ⚠️ `images/book_书名.jpg` → 上传失败，图片字段留空
+- ❌ <关键词> → 下载失败，未找到可用图片源
 
 校对提醒：
 - 未发现明显问题。
@@ -82,7 +284,10 @@ If issues exist, list them with source snippets and a concise reason:
 - 可能错别字："..."，建议核对是否应为 "..."。
 - 标点疑点："..."，中英文标点混用，建议人工确认。
 - 政治/合规风险："..."，建议人工复核表述是否符合发布要求。
-- 图片处理：第 N 处图片未提供图床链接，已按规则不写入正文。
+- 人物信息存疑：<姓名> 生卒年在 Wikipedia 与 Kotobank 记载不一致，已采用 Kotobank。
+- 图片下载失败：<关键词>，未找到可用图片源。
+- PicGo 上传失败：`images/xxx.jpg`，语法块图片字段已留空；请确认 PicGo 当前图床可用后重跑 `scripts/upload_image.py`。
+- PicGo 接口不可用：`upload_image.py` 退出码 2，请运行 `--check` 并检查 `~/.weiwuming/image-host.json`。
 ```
 
 ## Word Extraction Notes
