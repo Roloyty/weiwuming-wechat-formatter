@@ -9,7 +9,7 @@
 - 生成编者按、章节标题、注释、作者简介、人物卡片、书籍卡片和延伸阅读等编辑器语法。
 - 将图片交给用户自己的 PicGo Server，使用用户在 PicGo 中配置并选中的图床。
 - 使用随 Skill 打包的编辑器快照和本地 `marked`、`jsdom` 生成微信粘贴版 HTML。
-- 校验公网图片 URL、语法块配对和未渲染的语法残留。
+- 校验编者按首位、模块严格排序、公网图片 URL、语法块配对和未渲染的语法残留。
 - 将疑似错别字、标点和合规问题作为校对提醒列出，不静默修改原文。
 
 ## 工作流程
@@ -41,9 +41,11 @@ Markdown + 微信粘贴版 HTML + 浏览器预览
 │   └── syntax_rules.md            # 编辑器语法参考
 ├── scripts/
 │   ├── extract_docx.py            # Word 结构提取
+│   ├── setup_picgo.py             # PicGo CLI 状态、OAuth 与 uploader 配置引导
 │   ├── upload_image.py            # PicGo Server API 上传客户端
 │   └── render_html.js             # 编辑器同源 HTML 渲染与校验
 ├── tests/
+│   ├── test_setup_picgo.py         # PicGo CLI 引导测试
 │   └── test_upload_image.py        # PicGo API 客户端模拟服务测试
 ├── package.json
 └── package-lock.json
@@ -112,6 +114,20 @@ PICGO_TIMEOUT=90
 python scripts/upload_image.py --check
 ```
 
+如果尚未配置 PicGo，可先检查 PicGo Core CLI：
+
+```bash
+python scripts/setup_picgo.py --status
+```
+
+PicGo Core 2.0+ 可以通过官方浏览器流程登录 PicGo Cloud：
+
+```bash
+python scripts/setup_picgo.py --login
+```
+
+该 OAuth 只负责 PicGo Cloud 登录，token 由 PicGo 自己保存。GitHub、S3、OSS、COS 等第三方图床仍需使用 `python scripts/setup_picgo.py --configure-uploader` 或 PicGo GUI 配置各自凭据。`--sync-config` 会调用官方云配置同步，可能上传本地配置并要求解决冲突，因此不会自动执行。
+
 上传图片：
 
 ```bash
@@ -148,16 +164,17 @@ node scripts/render_html.js article.md --preview
 - `article.html`：微信粘贴版内联样式 HTML。
 - `article.preview.html`：浏览器预览页。
 
-渲染器会拒绝本地图片路径、未成对语法块和无法识别的残留语法。
+渲染器会拒绝标题或其他内容出现在编者按上方、模块顺序错误、本地图片路径、未成对语法块和无法识别的残留语法。
+
+文章固定顺序为：编者按 → 正文 → 目录（如有）→ 注释（如有）→ `---[note]` → 作者简介 → 译者简介（如有）→ 延伸阅读 → 两条 staff → 固定关注区。
 
 ## 常用编辑器语法
 
 | 语法 | 用途 |
 |---|---|
-| `### 标题 / 作者` | 主标题和作者 |
-| `## 小标题` | 章节标题 |
-| `---[dot]` | 标题视觉分隔 |
-| `>>> 内容` ... `<<<` | 编者按 |
+| `>>> 内容` ... `<<<` | 编者按；必须是首个非空内容，上方不放文章标题 |
+| `## 小标题` | 章节标题，下一行必须是 `---[dot]` |
+| `---[dot]` | `##` 标题视觉分隔 |
 | `---[notes]` ... `---[/notes]` | 注释区域 |
 | `[book:封面URL\|书名\|作者\|出版社\|年份]` | 中文书籍卡片 |
 | `[universal:图片URL\|名称\|简介]` | 人物、事件、图片等通用卡片 |

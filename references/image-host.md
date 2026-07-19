@@ -27,6 +27,26 @@ PicGo GUI 2.2+ 默认开启本地 Server：
 
 实际图床的账号、Bucket、Token 等都由 PicGo 管理，不写进本 Skill。
 
+### 未配置时：PicGo Cloud OAuth（可选）
+
+PicGo Core 2.0+ 支持 PicGo Cloud 的浏览器登录流程：本地启动一次性回调服务并打开 `https://cloud.picgo.app`，登录成功后把 token 保存在 PicGo 自己的 `settings.picgoCloud.token` 中。本 Skill 不读取或保存该 token。
+
+```bash
+python <SKILL_ROOT>/scripts/setup_picgo.py --status
+python <SKILL_ROOT>/scripts/setup_picgo.py --login
+```
+
+- `--login` 等价于调用官方 `picgo login`，会打开浏览器；执行前必须征得用户确认。
+- OAuth 只登录 **PicGo Cloud**。它不能替 GitHub、S3、阿里云 OSS、腾讯云 COS 等第三方图床生成凭据。
+- 第三方图床使用 `python <SKILL_ROOT>/scripts/setup_picgo.py --configure-uploader`（调用 `picgo set uploader`）或 PicGo GUI 配置。
+- 本地已有云端配置时，可由用户明确选择 `--sync-config` 调用 `picgo config sync`。首次同步可能把本地配置上传到 PicGo Cloud，冲突时还会要求交互选择，因此禁止自动执行。
+- 若找不到 `picgo` 命令，安装 PicGo Core CLI 后再运行：`npm install -g picgo`。PicGo GUI 已配置且 Server 可用时无需安装 CLI。
+
+官方依据：
+
+- [PicGo CLI login / config sync](https://docs.picgo.app/core/guide/commands)
+- [PicGo Cloud API](https://docs.picgo.app/core/api/#cloud)
+
 ## 第二步：配置接口
 
 默认接口为 `http://127.0.0.1:36677/upload`。如果端口、主机或路径不同，请使用以下任一方式覆盖。
@@ -73,6 +93,7 @@ python <SKILL_ROOT>/scripts/upload_image.py --json images/*.jpg
 - 远程 `http(s)` 图片原样返回，不重复上传。
 - 本地图片会转换为绝对路径后发送给 PicGo。
 - 缓存保存在 `~/.weiwuming/picgo-upload-cache.json`，按 PicGo 接口和图片内容 hash 隔离。
+- 如果沙箱不允许写入缓存，脚本会发出警告但仍返回已经上传成功的 URL，避免重试造成重复上传。
 - 退出码：`0` 成功；`2` 配置无效或服务不可用；`1` 至少一张图片上传失败。
 
 ## 常见问题
@@ -91,6 +112,8 @@ PicGo Server 已启用鉴权。请把同一个 shared secret 写入 `server_secr
 ### PicGo 能访问但上传失败
 
 检查 PicGo 当前图床是否已正确配置并设为启用状态，然后查看 PicGo 日志。具体图床错误由 PicGo 返回，本脚本不会接触或代管图床凭据。
+
+如果计划使用 PicGo Cloud 且 CLI 2.0+ 已安装，可先运行 `python scripts/setup_picgo.py --status`，未登录时再经用户确认运行 `--login`。
 
 ## 安全须知
 

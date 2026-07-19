@@ -131,6 +131,86 @@ const problems = [];
 const outDom = new JSDOM('<body>' + styled + '</body>');
 const odoc = outDom.window.document;
 
+// 0. 文章结构必须严格遵循发布顺序；编者按必须是首个非空内容，前面不放文章标题。
+const normalizedMd = md.replace(/^\uFEFF/, '');
+const firstNonEmptyLine = normalizedMd.split(/\r?\n/).find(line => line.trim() !== '') || '';
+if (!firstNonEmptyLine.startsWith('>>> ')) {
+  problems.push('文章首个非空内容必须是“>>> 编者按…”，编者按上方不要放文章标题或其他内容');
+}
+
+function markerIndex(re) {
+  const match = re.exec(normalizedMd);
+  return match ? match.index : -1;
+}
+
+const structure = {
+  editorStart: markerIndex(/^>>> /m),
+  editorEnd: markerIndex(/^<<<\s*$/m),
+  toc: markerIndex(/^---\[toc\]\s*$/m),
+  notes: markerIndex(/^---\[notes\]\s*$/m),
+  note: markerIndex(/^---\[note\]\s*$/m),
+  author: markerIndex(/^---\[bio-title:作者简介\]\s*$/m),
+  translator: markerIndex(/^---\[bio-title:译者简介\]\s*$/m),
+  reading: markerIndex(/^---\[reading-title:延伸阅读\]\s*$/m),
+  staff: markerIndex(/^\[staff:/m),
+  follow: markerIndex(/^---\[follow\]\s*$/m),
+};
+
+for (const [key, label] of [
+  ['editorStart', '编者按'],
+  ['editorEnd', '编者按结束标记 <<<'],
+  ['note', '来源说明 ---[note]'],
+  ['author', '作者简介'],
+  ['reading', '延伸阅读'],
+  ['staff', 'staff 署名'],
+  ['follow', '关注引导'],
+]) {
+  if (structure[key] < 0) problems.push(`缺少必需模块：${label}`);
+}
+
+const orderedMarkers = [
+  ['editorStart', '编者按'],
+  ['editorEnd', '编者按结束'],
+  ['toc', '目录'],
+  ['notes', '注释'],
+  ['note', '来源说明'],
+  ['author', '作者简介'],
+  ['translator', '译者简介'],
+  ['reading', '延伸阅读'],
+  ['staff', 'staff 署名'],
+  ['follow', '关注引导'],
+].filter(([key]) => structure[key] >= 0);
+for (let i = 1; i < orderedMarkers.length; i++) {
+  const [prevKey, prevLabel] = orderedMarkers[i - 1];
+  const [key, label] = orderedMarkers[i];
+  if (structure[key] <= structure[prevKey]) {
+    problems.push(`文章模块顺序错误：“${label}”必须位于“${prevLabel}”之后`);
+  }
+}
+
+if (structure.editorEnd >= 0) {
+  const bodyEnds = [structure.toc, structure.notes, structure.note].filter(index => index > structure.editorEnd);
+  const bodyEnd = bodyEnds.length ? Math.min(...bodyEnds) : normalizedMd.length;
+  if (!normalizedMd.slice(structure.editorEnd + 3, bodyEnd).trim()) {
+    problems.push('编者按之后、目录/注释/来源说明之前必须有正文');
+  }
+}
+
+const bioMarkers = [...normalizedMd.matchAll(/^---\[bio-title:[^\]]+\]\s*$/gm)];
+if (bioMarkers.length && structure.author >= 0 && bioMarkers[0].index !== structure.author) {
+  problems.push('作者简介必须是来源说明之后的第一个简介模块');
+}
+for (const bio of bioMarkers) {
+  if (structure.note >= 0 && bio.index <= structure.note) problems.push('简介模块必须位于 ---[note] 之后');
+  if (structure.reading >= 0 && bio.index >= structure.reading) problems.push('简介模块必须位于延伸阅读之前');
+}
+
+const staffMarkers = [...normalizedMd.matchAll(/^\[staff:[^\]]+\]\s*$/gm)];
+if (staffMarkers.length !== 2) problems.push(`必须有且只有两条 [staff:]，当前为 ${staffMarkers.length} 条`);
+if (staffMarkers.length && structure.follow >= 0 && staffMarkers.at(-1).index >= structure.follow) {
+  problems.push('所有 [staff:] 必须位于关注引导 ---[follow] 之前');
+}
+
 // 1. 所有 <img> 必须是 http(s) 公网地址（本地路径粘进公众号必裂图）。
 //    编辑器自带的 data:SVG 空封面占位图放行；空 src（图片字段留空）只警告。
 const warnings = [];
@@ -145,13 +225,20 @@ for (const img of imgs) {
 const pairChecks = [
   [/^>>> /m, '.editor-note', '编者按 >>> <<<'],
   [/^---\[dot\]/m, '.divider-dot', '小标题装饰 ---[dot]'],
+  [/^---\[toc\]/m, '.toc-title, .toc-scroll', '目录块 ---[toc]'],
   [/^---\[notes\]/m, '.notes-section, .end-notes', '注释块 ---[notes]'],
+  [/^---\[note\]/m, '.end-notes', '来源说明 ---[note]'],
   [/^---\[bio-title:/m, '.bio-title', '简介块 ---[bio-title:]'],
+  [/^\[bio-img:/m, '.bio-img img', '[bio-img:] 简介图片'],
   [/^---\[reading-title:/m, '.reading-title', '延伸阅读块 ---[reading-title:]'],
   [/^---\[follow\]/m, '.follow-section, .follow-line', '关注引导 ---[follow]'],
   [/^\[book:/m, '.book-title', '[book:] 书籍卡片'],
+  [/^\[enbook:/m, '.enbook-title', '[enbook:] 英文书籍卡片'],
+  [/^\[jpbook:/m, '.jpbook-title', '[jpbook:] 日文书籍卡片'],
   [/^\[universal:/m, '.person-name, .person-info', '[universal:] 人物卡片'],
   [/^\[reading-book:/m, '.reading-book-title, .reading-item', '[reading-book:] 条目'],
+  [/^\[reading-enbook:/m, '.reading-enbook-title', '[reading-enbook:] 条目'],
+  [/^\[reading-jpbook:/m, '.reading-jpbook-title', '[reading-jpbook:] 条目'],
   [/^\[staff:/m, null, '[staff:] 条目'],
 ];
 for (const [mdRe, sel, label] of pairChecks) {
@@ -161,7 +248,7 @@ for (const [mdRe, sel, label] of pairChecks) {
 }
 // 3. 未被识别的语法残渣：渲染产物纯文本里不应再出现语法标记
 const plain = odoc.body.textContent || '';
-for (const leak of ['---[', '[book:', '[enbook:', '[jpbook:', '[universal:', '[reading-book:', '[staff:', '[bio:', '<<<']) {
+for (const leak of ['---[', '[book:', '[enbook:', '[jpbook:', '[universal:', '[reading-book:', '[reading-enbook:', '[reading-jpbook:', '[staff:', '[bio:', '[bio-img:', '<<<']) {
   if (plain.includes(leak)) problems.push(`语法残渣未被解析: "${leak}"（多为标记拼写/空格问题）`);
 }
 if (/^>>>[^ ]/m.test(md)) problems.push('">>>" 后缺空格，编者按不会被识别');
@@ -190,4 +277,4 @@ if (problems.length) {
   for (const p of problems) console.error('  - ' + p);
   process.exit(1);
 }
-console.log('✓ 校验通过（图片全公网 / 语法块全渲染 / 无语法残渣）');
+console.log('✓ 校验通过（编者按首位 / 模块顺序 / 图片全公网 / 语法块全渲染 / 无语法残渣）');

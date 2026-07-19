@@ -117,6 +117,12 @@ class UploadImageTests(unittest.TestCase):
         with self.assertRaises(upload_image.PicGoError):
             upload_image._extract_url({"success": True, "result": ["local.png"]})
 
+    def test_cache_write_failure_does_not_raise(self):
+        with mock.patch.object(Path, "mkdir", return_value=None), mock.patch.object(
+            Path, "write_text", side_effect=PermissionError("denied")
+        ):
+            self.assertFalse(upload_image.save_cache({"key": "https://example.com/image.jpg"}))
+
 
 if __name__ == "__main__":
     unittest.main()

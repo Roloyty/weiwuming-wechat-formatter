@@ -197,12 +197,23 @@ def load_cache() -> dict[str, str]:
     return {str(key): value for key, value in raw.items() if isinstance(value, str)}
 
 
-def save_cache(cache: dict[str, str]) -> None:
-    HOME_CFG.mkdir(parents=True, exist_ok=True)
-    CACHE_FILE.write_text(
-        json.dumps(cache, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+def save_cache(cache: dict[str, str]) -> bool:
+    """Persist cache when possible without discarding successful upload results.
+
+    Sandboxed runners may allow the PicGo request but deny writes under the user's home
+    directory. Cache failure must not turn an already-successful upload into a failed run,
+    otherwise a retry uploads the same files again.
+    """
+    try:
+        HOME_CFG.mkdir(parents=True, exist_ok=True)
+        CACHE_FILE.write_text(
+            json.dumps(cache, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        print(f"⚠ PicGo 上传已完成，但缓存写入失败：{CACHE_FILE} ({exc})", file=sys.stderr)
+        return False
+    return True
 
 
 def upload_one(path: str, config: dict[str, Any], cache: dict[str, str]) -> str:

@@ -6,16 +6,16 @@ Use this reference only to map source document structure into the "谓无名" ed
 
 | Syntax | Use |
 |---|---|
-| `### 标题 / 作者` | Main title with author when both are explicit in source |
-| `## 标题` | Section heading (no `---[dot]` after or before it) |
-| `---[dot]` | Visual divider only when explicitly present in the source document |
+| `### 标题 / 作者` | Optional chapter heading inside the body; never place it above the editor note |
+| `## 标题` | Section heading; immediately followed by `---[dot]` |
+| `---[dot]` | Required visual divider after every `##` heading |
 | `>` | Blockquote/citation |
 
 ### Article Structure Order
 
 Every article must follow this order:
 
-1. **编者按** — `>>>` / `<<<`, ~500 chars, after `### 标题 / 作者`
+1. **编者按** — `>>> ` / `<<<`, ~500 chars; first non-empty markdown content, with no article title above it
 2. **正文** — body text with keyword blocks (books, persons, etc.) inline
 3. **目录** (if any) — `---[toc]` ... `---[/toc]`
 4. **注释** (if any) — `---[notes]` ... `---[/notes]`
@@ -23,20 +23,20 @@ Every article must follow this order:
 6. **作者简介** — `---[bio-title:作者简介]` ... `---[/bio]`
 7. **译者简介** (if any) — `---[bio-title:译者简介]` ... `---[/bio]`
 8. **延伸阅读** — `---[reading-title:延伸阅读]` ... `---[/reading]`
-9. **末尾固定内容** — `[staff:...]` + `---[follow]` ... `---[/follow]` + profile
+9. **staff** — exactly two `[staff:...]` entries
+10. **固定关注区** — `---[follow]` ... `---[/follow]`
 
 ### ## Heading Rule
 
-- `##` section headings stand on their own. Do **NOT** add `---[dot]` after `##` headings or before them.
-- `---[dot]` is only used when the source document explicitly contains a visual divider.
+- Every `##` section heading must be immediately followed by a separate `---[dot]` line.
+- Do not add `---[dot]` after `###` subheadings.
 
 ## Editor Notes (编者按)
 
-**Every article must begin with a 编者按** placed after the `### 标题 / 作者` line and before the first `##` section heading.
+**Every article must begin with a 编者按.** It must be the first non-empty markdown content. Do not place the article title, author line, or other content above it.
 
 ```markdown
->>>
-编者按内容（约500字）：概述文章主要内容，并进行简要评议，点出文章的学术意义或现实关怀，或提出值得进一步思考的问题。语气应与"谓无名"的编辑风格一致——审慎、有见地、保持开放。
+>>> 编者按内容（约500字）：概述文章主要内容，并进行简要评议，点出文章的学术意义或现实关怀，或提出值得进一步思考的问题。语气应与"谓无名"的编辑风格一致——审慎、有见地、保持开放。
 <<<
 ```
 
@@ -194,6 +194,8 @@ Rules:
 
 Only include `[bio-img:url]` if a hosted URL is provided or present in source.
 
+The author bio is the first bio block after `---[note]`. Put the translator bio after the author bio when present. Move source bio wording into these blocks; do not leave duplicate bios in the body.
+
 ## Staff and Follow
 
 **Every article must end with two staff entries and the fixed follow section.**
@@ -227,9 +229,9 @@ Before delivery, check:
 - No placeholder URL appears.
 - No local image path appears as an article image URL.
 - Original wording is preserved.
-- **编者按** is present (~500 chars) after `### 标题 / 作者` and before the first `##` heading.
-- **No `---[dot]`** is placed after or before `##` headings (unless source explicitly has a divider).
-- **Article structure order** is correct: 编者按 → 正文 → 目录(如有) → 注释(如有) → 来源说明(`---[note]`) → 作者简介 → 译者简介(如有) → 延伸阅读 → 末尾固定内容.
+- **编者按** is present (~500 chars) as the first non-empty content; no article title appears above it.
+- Every `##` heading is immediately followed by `---[dot]`; `###` headings are not.
+- **Article structure order** is exact: 编者按 → 正文 → 目录(如有) → 注释(如有) → 来源说明(`---[note]`) → 作者简介 → 译者简介(如有) → 延伸阅读 → 两条 staff → 固定关注区.
 - **`---[note]` source attribution** is present with push source info.
 - **Two staff entries** are present: author as 编辑, `春生、` as 审校.
 - **Fixed follow section** is present at the end of the article.
