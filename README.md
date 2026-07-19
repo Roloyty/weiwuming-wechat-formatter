@@ -193,6 +193,11 @@ node scripts/render_html.js article.md --preview
 - PicGo 图床凭据只保存在 PicGo 自身配置中，不应提交到本仓库。
 - 上传后的图片通常可以公网访问，请勿上传隐私或未公开资料。
 
+## 相关项目
+
+- **「谓无名」公众号编辑器**：本 Skill 配套的在线排版工具（HTML 单页应用），支持实时预览和一键复制到公众号后台。
+- 在线体验：https://www.axureshow.com/project/kurPMyuE/
+
 ## License
 
 MIT
