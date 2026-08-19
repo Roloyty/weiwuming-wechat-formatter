@@ -211,13 +211,14 @@ These blocks should appear directly after the preceding content, without any int
    - Preserve paragraph order from the extraction JSON `content` array.
    - Use style hints, heading levels, alignment, bold runs, tables, footnotes, endnotes, and image relationships only as formatting clues.
    - Treat tables as source content. Convert simple tables to readable text blocks; if a table is structurally important, preserve rows in markdown table form.
+   - **MinerU PDF sources — recover footnotes before declaring them lost**: `full.md` drops footnote contents, but the sibling `*_content_list.json` keeps them as `page_footnote` blocks (in page order; `ref_text` blocks hold the bibliography). Collect them, separate the author-affiliation `∗` note, and restore lost entry numbers from page order. See `references/syntax_rules.md` → Notes.
 
 3. Apply editor syntax. Read `references/syntax_rules.md` when exact syntax is needed.
    - Do not emit a main article title or author line above the article. Use the source title for `<文章名>.md` / `.html` filenames only.
    - **编者按**: write ~500-char editorial summary/commentary with `>>> ` (trailing space mandatory) on the same line as content start. It must be the first non-empty markdown content.
    - Section heading: `## 标题` followed by `---[dot]` (always bound together).
    - Blockquote: `> 原文`.
-   - Notes: `---[notes]` ... `---[/notes]`; note entries use `^[① 内容]`.
+   - Notes: `---[notes]` ... `---[/notes]`; note entries are single lines in `^[N 内容]` format (Arabic N; the editor auto-converts to circled ①–㊿). Inline references are `^N` — never raw HTML `<sup>N</sup>`. Details and pitfalls in `references/syntax_rules.md` → Notes.
    - Source note: `---[note]` ... `---[/note]`. **No extra `---` line before this block.**
    - Bio: after `---[note]`, place `---[bio-title:作者简介]`, `[bio:原文]`, `---[/bio]`, followed by translator bio when present. **No extra `---` line before these blocks.**
    - **Keyword blocks**: apply the Selection & Listing Rules above; search with the available web tools, download to `images/`, upload through the user's PicGo Server via `scripts/upload_image.py`, and insert `[book:<URL>|...]` / `[universal:<URL>|...]` blocks at first mention.
@@ -251,6 +252,8 @@ These blocks should appear directly after the preceding content, without any int
    - **No extra `---` horizontal rule** before `---[note]`, `---[bio-title:]`, `---[reading-title:]`, `---[toc]`, or `---[notes]` blocks.
    - The article follows the exact structure order: 编者按 → 正文 → 目录(如有) → 注释(如有) → `---[note]` → 作者简介 → 译者简介(如有) → 延伸阅读 → 两条 staff → 固定关注区.
    - Every `##` heading is followed by `---[dot]`.
+   - **Notes/footnote format checks**: (1) inline `^N` reference count == `^[N …]` entry count in `---[notes]`; (2) in the rendered HTML, `footnote-item` divs and `footnote-num` spans both equal that count, with no gaps in the circled-number sequence; (3) zero `<sup>` tags and zero bare `^数字` left in the HTML. If the source had footnotes, every marker must have its recovered entry — no "footnotes lost" report while `page_footnote` blocks still exist in the MinerU JSON.
+   - **Punctuation normalization checks** (OCR sources): no half-width `, ; :` followed by a space inside Chinese sentences (should be `，；：`); no smart quotes U+201C/U+201D in Chinese context (unify to the article's `「」` style, keep English quotes in English citations); no unclosed `「` without `」`; no empty parentheses `（ ）` from OCR-dropped years/terms (restore only verifiable values, otherwise report in 校对提醒). When doing exact-string replacements, diagnose actual char codes first (`charCodeAt`) — curly vs straight quotes look identical in output.
    - Person blocks are substantive and unique (target 3–6; fewer is fine for short articles); reading list has 2–5 items and no duplicates with body books.
    - Open `<文章名>.preview.html` or capture a browser screenshot. Check the opening, card covers, long poetry/table layouts, and footer; fix visible blank/broken cards or spacing errors and re-render.
    - Suspected typos, grammar, punctuation, and political/compliance issues are listed separately, not silently corrected.

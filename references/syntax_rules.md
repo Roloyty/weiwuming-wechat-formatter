@@ -45,17 +45,40 @@ Rules:
 - It must: (1) summarize the main content and key arguments; (2) provide brief editorial commentary.
 - The 编者按 is written by the formatter, not copied from the source.
 
-## Notes
+## Notes (注释/脚注)
 
 ```markdown
 ---[notes]
 
-^[① 注释原文]
+^[1 注释原文一]
+
+^[2 注释原文二]
 
 ---[/notes]
 ```
 
-Inline note references such as `^①` should be preserved.
+### Syntax details (verified against editor source code)
+
+- **Inline reference**: `^N` where N is an Arabic number 1–50, placed directly after the sentence it annotates (e.g. `……探讨了美国宪法问题；^1杰克……`). The editor preprocess auto-converts `^1` → `^①` (circled numbers ①–㊿) and the postprocess renders it as a blue superscript (`footnote-num` span). Do NOT use raw HTML `<sup>N</sup>` — it renders as a plain superscript without the editor's note styling and is a common cause of "文中序号格式不对" complaints.
+- **Note entry**: inside `---[notes]`, every entry MUST be a single line in the exact format `^[N 内容]` — starts with `^[`, then the number, one space, the note text, ends with `]`. The editor converts `^[1 ` → `^[① ` automatically and renders matched lines as footnote items (blue circled number + gray text).
+- **Plain lines inside `---[notes]` are NOT rendered as footnote items** — they pass through as ordinary paragraphs. A bibliography pasted as bare lines therefore shows no numbering and wrong styling. Wrap every entry as `^[N …]`.
+- Entry numbers must correspond 1:1 with the inline `^N` references (same N, no gaps).
+- Long notes (including ones containing URLs or mixed Chinese/English citations) must stay on a single source line — no internal line breaks.
+
+### Footnote recovery from MinerU conversions
+
+When the source is a MinerU-converted PDF, footnote contents are usually MISSING from `full.md` but preserved in the sibling `*_content_list.json` as `page_footnote` blocks (plus `ref_text` blocks for the bibliography). Before declaring footnotes lost:
+
+- Parse `*_content_list.json`, collect all `type === "page_footnote"` blocks in page order.
+- Distinguish the author-affiliation footnote (`∗ …`) from the numbered footnotes; the affiliation note is usually folded into the author bio, not the notes block.
+- OCR may drop some entries' leading numbers (`N.`); recover each entry's number from its page order relative to the surviving numbered entries.
+- The end-of-article 参考文献 list is usually 100% redundant with the recovered footnotes (every citation appears inside some footnote). Prefer the footnotes — they match the inline markers — and drop the bibliography to avoid duplication.
+
+### Notes format validation (run after rendering)
+
+- Count match: number of inline `^N` refs in the body == number of `^[N …]` lines in `---[notes]`.
+- Rendered check: in the output HTML, count `footnote-item` divs and `footnote-num` spans — both must equal the expected N, with no gaps in the circled-number sequence (①…㉓ etc.).
+- No residue: zero `<sup>` tags and zero bare `^数字` left in the rendered HTML.
 
 ## Source Note (来源说明)
 
