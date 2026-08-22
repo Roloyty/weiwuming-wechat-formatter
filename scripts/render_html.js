@@ -2,7 +2,7 @@
 /**
  * 谓无名 markdown → 微信粘贴版 HTML 渲染器
  *
- * 不做任何样式移植：直接用 jsdom 加载「编辑器最终版/index.html」，调用编辑器
+ * 不做任何样式移植：直接用 jsdom 加载网页版 index.html，调用编辑器
  * 自己的 preprocessMarkdown → marked.parse → postprocessHtml → applyThemeToPreview
  * → generateInlineStyledHtml 流水线。输出与编辑器「复制」按钮产物逐字节一致，
  * 编辑器 index.html 永远是唯一样式权威——改样式无需同步任何 Python/JS 副本。
@@ -15,8 +15,9 @@
  * 编辑器 index.html 查找顺序:
  *   --editor 参数 > 环境变量 WEIWUMING_EDITOR_HTML
  *   > ~/.weiwuming/render.json 的 editor_html 字段
- *   > F:\py\编辑器最终版\index.html（本机默认）
+ *   > F:\py\tools.weiwuming.cn\index.html（本机网页版，优先）
  *   > <skill>/assets/editor-index.html（随 skill 打包的快照，兜底）
+ *   > F:\py\编辑器最终版\index.html（旧路径，仅兼容）
  *
  * 输出:
  *   <article>.html          微信粘贴版（inline-styled，body 片段）
@@ -63,20 +64,24 @@ function resolveEditor() {
       if (c.editor_html) candidates.push(c.editor_html);
     } catch (e) { /* 配置损坏则忽略 */ }
   }
-  candidates.push('F:\\py\\编辑器最终版\\index.html');
+  candidates.push('F:\\py\\tools.weiwuming.cn\\index.html');
   candidates.push(path.join(SKILL_ROOT, 'assets', 'editor-index.html'));
+  candidates.push('F:\\py\\编辑器最终版\\index.html');
   for (const c of candidates) if (c && fs.existsSync(c)) return c;
   fail(2, '找不到编辑器 index.html，候选: ' + candidates.join(' | '));
 }
 const editorFile = resolveEditor();
 
-// ---------- 组装 jsdom 环境（marked CDN → 本地内联） ----------
+// ---------- 组装 jsdom 环境（网页版的 marked 脚本 → npm 依赖内联） ----------
 let html = fs.readFileSync(editorFile, 'utf8');
+const markedEntry = require.resolve('marked');
 const markedSrc = fs.readFileSync(
-  path.join(SKILL_ROOT, 'node_modules', 'marked', 'lib', 'marked.umd.js'), 'utf8');
-const cdnRe = /<script\s+src="https:\/\/cdn\.jsdelivr\.net\/npm\/marked\/marked\.min\.js"><\/script>/;
-if (!cdnRe.test(html)) fail(1, '编辑器 HTML 里没找到 marked CDN 标签，无法注入本地 marked（编辑器结构变了？）');
-html = html.replace(cdnRe, () => '<script>' + markedSrc + '\n</script>');
+  path.join(path.dirname(markedEntry), 'marked.umd.js'), 'utf8');
+const markedScriptRe = /<script\b[^>]*\bsrc=(["'])[^"']*marked(?:\.min)?\.js(?:\?[^"']*)?\1[^>]*>\s*<\/script>/i;
+if (!markedScriptRe.test(html)) {
+  fail(1, '编辑器 HTML 里没找到 marked 脚本标签，无法注入 npm 版 marked（编辑器结构变了？）');
+}
+html = html.replace(markedScriptRe, () => '<script>' + markedSrc + '\n</script>');
 
 const vc = new VirtualConsole();  // 收集页面脚本报错，避免静默失败
 const pageErrors = [];
@@ -236,6 +241,7 @@ const pairChecks = [
   [/^\[enbook:/m, '.enbook-title', '[enbook:] 英文书籍卡片'],
   [/^\[jpbook:/m, '.jpbook-title', '[jpbook:] 日文书籍卡片'],
   [/^\[universal:/m, '.person-name, .person-info', '[universal:] 人物卡片'],
+  [/^\[origin:/m, '.origin-info .origin-photo img', '[origin:] 原图尺寸图片卡片'],
   [/^\[reading-book:/m, '.reading-book-title, .reading-item', '[reading-book:] 条目'],
   [/^\[reading-enbook:/m, '.reading-enbook-title', '[reading-enbook:] 条目'],
   [/^\[reading-jpbook:/m, '.reading-jpbook-title', '[reading-jpbook:] 条目'],
@@ -248,7 +254,7 @@ for (const [mdRe, sel, label] of pairChecks) {
 }
 // 3. 未被识别的语法残渣：渲染产物纯文本里不应再出现语法标记
 const plain = odoc.body.textContent || '';
-for (const leak of ['---[', '[book:', '[enbook:', '[jpbook:', '[universal:', '[reading-book:', '[reading-enbook:', '[reading-jpbook:', '[staff:', '[bio:', '[bio-img:', '<<<']) {
+for (const leak of ['---[', '[book:', '[enbook:', '[jpbook:', '[universal:', '[origin:', '[reading-book:', '[reading-enbook:', '[reading-jpbook:', '[staff:', '[bio:', '[bio-img:', '<<<']) {
   if (plain.includes(leak)) problems.push(`语法残渣未被解析: "${leak}"（多为标记拼写/空格问题）`);
 }
 if (/^>>>[^ ]/m.test(md)) problems.push('">>>" 后缺空格，编者按不会被识别');
@@ -262,8 +268,41 @@ if (preview) {
     `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>预览 - ${path.basename(input)}</title>
-<style>body{margin:0;background:#e5e5e5}#wx{width:414px;margin:20px auto;background:#fff;padding:20px 16px;box-shadow:0 2px 12px rgba(0,0,0,.15)}</style>
-</head><body><div id="wx">${styled}</div></body></html>`, 'utf8');
+<style>
+body{margin:0;background:#e5e5e5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;background:#20262e;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+#copyBtn{border:0;border-radius:999px;padding:8px 18px;background:#3daad6;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+#copyBtn:active{transform:translateY(1px)}#copyStatus{font-size:13px;color:#d8dee6}
+#wx{width:414px;box-sizing:border-box;margin:20px auto;background:#fff;padding:20px 16px;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+</style>
+</head><body><div id="toolbar"><button id="copyBtn" type="button">复制排版结果</button><span id="copyStatus">复制后直接粘贴到微信公众号编辑器</span></div><div id="wx">${styled}</div>
+<script>
+(function(){
+  var button=document.getElementById('copyBtn');
+  var status=document.getElementById('copyStatus');
+  var content=document.getElementById('wx');
+  function fallbackCopy(){
+    var selection=window.getSelection();
+    var range=document.createRange();
+    range.selectNodeContents(content);selection.removeAllRanges();selection.addRange(range);
+    var ok=document.execCommand('copy');selection.removeAllRanges();
+    if(!ok)throw new Error('execCommand copy failed');
+  }
+  button.addEventListener('click',async function(){
+    try{
+      var rich=content.innerHTML;var plain=content.innerText;
+      if(navigator.clipboard&&window.ClipboardItem){
+        var item=new ClipboardItem({'text/html':new Blob([rich],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})});
+        await navigator.clipboard.write([item]);
+      }else{fallbackCopy()}
+      status.textContent='已复制，可直接粘贴到微信公众号编辑器';
+    }catch(error){
+      try{fallbackCopy();status.textContent='已复制，可直接粘贴到微信公众号编辑器'}
+      catch(fallbackError){status.textContent='复制失败，请在页面内全选文章后复制'}
+    }
+  });
+})();
+</script></body></html>`, 'utf8');
 }
 
 // ---------- 报告 ----------

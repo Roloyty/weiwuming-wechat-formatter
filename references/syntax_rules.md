@@ -147,6 +147,8 @@ Rules:
 [universal:图片URL|姓名|身份/简介]
 ```
 
+The first text field (`姓名`) is automatically bold. Write it as plain text; do not add Markdown `**`.
+
 ### Books
 
 ```markdown
@@ -166,11 +168,13 @@ Rules:
 [universal:图片URL|事件名称|简要说明]
 ```
 
-### Photos
+### Photos and Artworks
 
 ```markdown
-[universal:图片URL|图说第一行|图说第二行]
+[origin:图片URL|图说第一行|图说第二行|更多说明...]
 ```
+
+Use `[origin:]` for archival photos, artworks, horizontal images, or any image whose intrinsic width/height ratio must be preserved. It renders at the image's intrinsic size and proportion, shrinking only when it exceeds the article width. Its first text field is automatically bold; do not add `**`.
 
 ### Movies / TV Shows
 
@@ -179,6 +183,8 @@ Rules:
 ```markdown
 [universal:封面URL|片名|导演/主演/年份/简介]
 ```
+
+Movie/TV posters and advertisements stay on `[universal:]`, which uses the standard card image size. The title field is automatically bold.
 
 Rules:
 - Use `douban-mcp` `search-movie` with the title as keyword (`q`).
@@ -198,12 +204,15 @@ Rules:
 |---|---|
 | `![alt](url)` | Source contains a real hosted image URL |
 | `[bio-img:url]` | Bio photo with real hosted URL |
-| `[universal:url|第一行|第二行|...]` | Generic image block with real hosted URL |
+| `[universal:url|第一行|第二行|...]` | Standard-size person/poster/advertisement card; first line auto-bold |
+| `[origin:url|第一行|第二行|...]` | Intrinsic-proportion photo/artwork card; first line auto-bold |
 
 Rules:
 - Word embedded image targets such as `word/media/image1.png` are not hosted URLs.
 - If no hosted URL exists, omit the image syntax entirely.
 - Report omitted images after the formatted markdown.
+- Never add Markdown `**` around the first text field of `[universal:]` or `[origin:]`; the editor emits `<strong>` automatically.
+- Parenthesized metadata inside these cards (for example `（某某博物馆藏）`) inherits the same auxiliary gray as the surrounding card metadata.
 
 ## Bio
 
@@ -260,4 +269,5 @@ Before delivery, check:
 - **Fixed follow section** is present at the end of the article.
 - **Extended reading section** is present above staff entries with relevant book recommendations.
 - **Keyword blocks** are inserted after relevant paragraphs for key persons, books, events, and photos.
+- `[universal:]` is used for standard cards/posters/ads; `[origin:]` is used for photos/artworks that must preserve intrinsic proportions; neither syntax contains `**` in its first text field.
 - Typos, grammar, punctuation, and political/compliance issues are reported separately under `校对提醒`.

@@ -1,15 +1,34 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>微信公众号排版编辑器 — 谓无名风格</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <title>谓无名 · 微信排版工作台</title>
+    <script src="vendor/marked.min.js"></script>
     <style>
         :root {
             --theme-color: #3daad6;
             --book-color: #888888;
             --book-color-light: #b2b2b2;
+            /* 工作台色板：墨案 / 暖石 / 朱砂印 / 黛蓝 / 金墨 */
+            --ink: #232a33;
+            --ink-deep: #1b2129;
+            --ink-soft: #5a6470;
+            --utility: #939aa4;
+            --paper: #f4f2ec;
+            --desk: #e7e3d8;
+            --sheet: #ffffff;
+            --seal: #b8453c;
+            --seal-deep: #9c362e;
+            --azure: #3daad6;
+            --azure-deep: #2b8fb8;
+            --gold: #c9a86a;
+            --rule: #ddd8cb;
+            --rule-soft: #eae6da;
+            --shadow-soft: 0 1px 2px rgba(27, 33, 41, .05), 0 8px 24px rgba(27, 33, 41, .07);
+            --ui-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", "宋体", serif;
+            --ui-sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+            --ui-mono: "JetBrains Mono", "Sarasa Mono SC", "Fira Code", Consolas, Menlo, monospace;
         }
 
         * {
@@ -20,91 +39,152 @@
 
         body {
             font-family: "SimSun", "宋体", "Songti SC", "Times New Roman", "MS Mincho", "Hiragino Mincho ProN", sans-serif;
-            background: #f0f2f5;
-            color: #333;
+            background:
+                radial-gradient(1200px 500px at 85% -10%, rgba(61, 170, 214, .06), transparent 60%),
+                radial-gradient(900px 420px at 8% 110%, rgba(184, 69, 60, .05), transparent 60%),
+                var(--paper);
+            color: var(--ink);
             height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* 顶部工具栏 */
+        /* ===== 顶栏：墨案压边 ===== */
         .toolbar {
-            background: #fff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 12px 24px;
+            background: linear-gradient(180deg, #2a323d 0%, var(--ink) 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, .35);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 6px 18px rgba(27, 33, 41, .18);
+            padding: 10px 22px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            gap: 12px;
             z-index: 10;
         }
 
         .toolbar-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1a1a1a;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            min-width: 0;
         }
 
-        .toolbar-title svg {
-            width: 24px;
-            height: 24px;
+        /* 签名元素：朱砂印章 */
+        .seal {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+            background: linear-gradient(145deg, #c24f45, var(--seal) 55%, var(--seal-deep));
+            color: #fff;
+            font-family: var(--ui-serif);
+            font-size: 20px;
+            font-weight: 700;
+            display: grid;
+            place-items: center;
+            border-radius: 7px;
+            box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.30), inset 0 2px 5px rgba(60,10,6,.30), 0 3px 8px rgba(156, 54, 46, .40);
+            transform: rotate(-2deg);
+            user-select: none;
+        }
+
+        .wordmark {
+            font-family: var(--ui-serif);
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: .34em;
+            color: #f2eee3;
+            white-space: nowrap;
+        }
+
+        .wordmark-sub {
+            font-weight: 400;
+            font-size: 13px;
+            letter-spacing: .20em;
+            color: rgba(242, 238, 227, .55);
+            margin-left: 12px;
+            padding-left: 14px;
+            border-left: 1px solid rgba(242, 238, 227, .18);
+        }
+
+        .byline {
+            font-family: var(--ui-sans);
+            font-size: 11px;
+            letter-spacing: .10em;
+            color: var(--gold);
+            white-space: nowrap;
         }
 
         .toolbar-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .btn {
-            padding: 8px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
+            font-family: var(--ui-sans);
+            padding: 7px 15px;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.16s ease;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
+        .btn:focus-visible {
+            outline: 2px solid var(--azure);
+            outline-offset: 2px;
+        }
+
+        /* 主动作 = 落印：印泥红 */
         .btn-primary {
-            background: #07c160;
+            background: linear-gradient(180deg, #c65a50, var(--seal) 60%, var(--seal-deep));
             color: #fff;
+            box-shadow: 0 2px 6px rgba(156, 54, 46, .45), inset 0 1px 0 rgba(255, 255, 255, .22);
         }
 
         .btn-primary:hover {
-            background: #06ad56;
+            filter: brightness(1.06);
+            box-shadow: 0 4px 12px rgba(156, 54, 46, .5), inset 0 1px 0 rgba(255, 255, 255, .25);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+            box-shadow: none;
         }
 
         .btn-secondary {
-            background: #f5f5f5;
-            color: #333;
-            border: 1px solid #ddd;
+            background: rgba(255, 255, 255, .07);
+            color: rgba(242, 238, 227, .82);
+            border-color: rgba(242, 238, 227, .16);
         }
 
         .btn-secondary:hover {
-            background: #e8e8e8;
+            background: rgba(255, 255, 255, .14);
+            color: #fff;
+            border-color: rgba(242, 238, 227, .32);
         }
 
         .btn-undo-redo {
-            background: #f5f5f5;
-            color: #555;
-            border: 1px solid #ddd;
-            padding: 8px 12px;
+            background: rgba(255, 255, 255, .07);
+            color: rgba(242, 238, 227, .82);
+            border-color: rgba(242, 238, 227, .16);
+            padding: 7px 12px;
         }
 
         .btn-undo-redo:hover:not(:disabled) {
-            background: #e8e8e8;
-            color: #333;
+            background: rgba(255, 255, 255, .14);
+            color: #fff;
+            border-color: rgba(242, 238, 227, .32);
         }
 
         .btn-undo-redo:disabled {
-            opacity: 0.4;
+            opacity: 0.32;
             cursor: not-allowed;
         }
 
@@ -114,99 +194,159 @@
         }
 
         .undo-redo-group .btn-undo-redo:first-child {
-            border-radius: 6px 0 0 6px;
+            border-radius: 999px 0 0 999px;
             border-right: none;
         }
 
         .undo-redo-group .btn-undo-redo:last-child {
-            border-radius: 0 6px 6px 0;
+            border-radius: 0 999px 999px 0;
         }
 
-        /* 主体区域 */
+        /* ===== 主体 ===== */
         .main-container {
             flex: 1;
             display: flex;
             overflow: hidden;
         }
 
-        /* 编辑区 */
         .editor-panel {
             width: 50%;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #e0e0e0;
+            border-right: 1px solid var(--rule);
+            background: var(--paper);
+            position: relative;
         }
 
+        /* 面板标题：点线呼应文章的 ···●··· 分割线 */
         .panel-header {
-            background: #fafafa;
+            background: var(--paper);
             padding: 10px 20px;
+            font-family: var(--ui-serif);
             font-size: 13px;
             font-weight: 600;
-            color: #666;
-            border-bottom: 1px solid #e8e8e8;
+            letter-spacing: .20em;
+            color: var(--ink-soft);
+            border-bottom: 1px solid var(--rule-soft);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 9px;
+        }
+
+        .panel-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(184, 69, 60, .12);
+        }
+
+        .editor-panel .panel-dot { background: var(--seal); }
+        .preview-panel .panel-dot { background: var(--azure); box-shadow: 0 0 0 3px rgba(61, 170, 214, .14); }
+
+        .panel-meta {
+            margin-left: auto;
+            font-family: var(--ui-sans);
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: .06em;
+            color: var(--utility);
+            background: var(--rule-soft);
+            border-radius: 999px;
+            padding: 3px 10px;
         }
 
         .sync-scroll-label {
             margin-left: auto;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 7px;
             cursor: pointer;
+            font-family: var(--ui-sans);
             font-weight: 400;
             font-size: 12px;
-            color: #aaa;
+            letter-spacing: .06em;
+            color: var(--utility);
             user-select: none;
         }
 
-        .sync-scroll-checkbox { display: none; }
+        .sync-scroll-label:focus-within .sync-scroll-switch {
+            outline: 2px solid var(--azure);
+            outline-offset: 2px;
+        }
+
+        .sync-scroll-checkbox {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
 
         .sync-scroll-switch {
-            width: 28px;
-            height: 16px;
-            background: #d0d0d0;
-            border-radius: 8px;
+            width: 34px;
+            height: 19px;
+            background: #d2ccbd;
+            border-radius: 999px;
             position: relative;
             transition: background 0.2s;
             flex-shrink: 0;
+            box-shadow: inset 0 1px 3px rgba(27, 33, 41, .12);
         }
 
         .sync-scroll-switch::after {
             content: '';
             position: absolute;
-            width: 12px;
-            height: 12px;
+            width: 15px;
+            height: 15px;
             background: #fff;
             border-radius: 50%;
             top: 2px;
             left: 2px;
             transition: left 0.2s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
         }
 
         .sync-scroll-checkbox:checked + .sync-scroll-switch {
-            background: var(--theme-color);
+            background: var(--azure);
         }
 
         .sync-scroll-checkbox:checked + .sync-scroll-switch::after {
-            left: 14px;
+            left: 17px;
         }
 
         .sync-scroll-checkbox:checked ~ .sync-scroll-text {
-            color: var(--theme-color);
+            color: var(--azure-deep);
+            font-weight: 600;
         }
 
         mark.editor-selection-highlight {
-            background: rgba(255, 213, 0, 0.5);
+            background: rgba(255, 199, 0, 0.45);
             color: inherit;
             border-radius: 2px;
+            box-shadow: 0 0 0 1px rgba(255, 180, 0, .35);
+        }
+
+        ::highlight(preview-sync-highlight) {
+            background: rgba(255, 199, 0, 0.45);
+            color: inherit;
+        }
+
+        .editor-sync-highlight-layer {
+            position: absolute;
+            z-index: 5;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .editor-sync-highlight-rect {
+            position: absolute;
+            background: rgba(61, 170, 214, 0.20);
+            border-radius: 2px;
+            box-shadow: inset 0 0 0 1px rgba(61, 170, 214, 0.28);
         }
 
         /* 块/图像回退高亮（文本无法精确匹配时，如图像、自定义块语法） */
         .preview-sync-flash {
-            background: rgba(255, 213, 0, 0.18);
+            background: rgba(255, 213, 0, 0.16);
             border-radius: 4px;
         }
         .preview-sync-flash img,
@@ -226,54 +366,110 @@
             border: none !important;
         }
 
+        /* 稿纸 */
         .editor-input {
             flex: 1;
             width: 100%;
-            padding: 20px;
+            padding: 24px 28px;
             border: none;
             outline: none;
-            font-family: "JetBrains Mono", "Fira Code", "Source Code Pro", Menlo, Monaco, Consolas, monospace;
-            font-size: 14px;
-            line-height: 1.8;
+            font-family: var(--ui-mono);
+            font-size: 13.5px;
+            line-height: 1.9;
             resize: none;
-            background: #fff;
+            background:
+                linear-gradient(90deg, transparent 0, transparent 100%) ,
+                var(--sheet);
+            border-left: 3px solid rgba(184, 69, 60, .28);
             color: #333;
+            caret-color: var(--seal);
+        }
+
+        .editor-input::selection {
+            background: rgba(61, 170, 214, 0.22);
         }
 
         .editor-input::placeholder {
-            color: #bbb;
+            color: #bcb6a8;
         }
 
-        /* 预览区 */
+        /* ===== 预览台 ===== */
         .preview-panel {
             width: 50%;
             display: flex;
             flex-direction: column;
-            background: #f5f5f5;
+            background:
+                radial-gradient(700px 320px at 50% 0%, rgba(61, 170, 214, .05), transparent 70%),
+                var(--desk);
+        }
+
+        .preview-panel .panel-header {
+            background: transparent;
+            border-bottom-color: rgba(27, 33, 41, .08);
         }
 
         .preview-content {
             flex: 1;
             overflow-y: auto;
-            padding: 30px;
+            padding: 28px 24px 40px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
         }
 
+        /* 拟真手机壳：深色机身 + 微曲面圆角 */
         .preview-phone {
             width: 100%;
-            max-width: 720px;
-            min-height: 100%;
-            background: #fff;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-            border-radius: 4px;
+            max-width: 414px;
+            min-height: 60%;
+            background: var(--sheet);
+            border: 9px solid #20262e;
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, .06) inset,
+                0 24px 48px rgba(27, 33, 41, .22),
+                0 4px 10px rgba(27, 33, 41, .12);
+            border-radius: 30px;
+            overflow: hidden;
+        }
+
+        /* 微信文章页导航条：‹ 公众号名 ··· */
+        .phone-statusbar {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            font-family: var(--ui-sans);
+            font-size: 13px;
+            color: #4a525c;
+            background: #f7f7f7;
+            border-bottom: 1px solid #e6e6e6;
+            user-select: none;
+        }
+
+        .phone-statusbar .sb-title {
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: .08em;
+            color: #1a1a1a;
+        }
+
+        .phone-statusbar .sb-side {
+            width: 28px;
+            font-size: 17px;
+            color: #57606a;
+            line-height: 1;
+        }
+
+        .phone-statusbar .sb-dots {
+            text-align: right;
+            letter-spacing: 2px;
+            font-weight: 700;
         }
 
         .preview-inner {
-            padding: 20px 0;
+            padding: 18px 0 26px;
         }
-
         /* ========== 微信公众号文章排版样式 — 谓无名风格 ========== */
 
         .wx-content {
@@ -364,8 +560,10 @@
 
         .wx-content .book-marker span {
             font-size: 12px;
-            color: var(--book-color);
+            color: var(--book-color-light);
             font-family: 宋体, SimSun, serif;
+            font-weight: 400;
+            font-style: normal;
             letter-spacing: 0.544px;
         }
 
@@ -540,6 +738,15 @@
         .wx-content .person-photo img {
             width: 153px;
             height: 212px;
+            display: inline-block;
+            vertical-align: bottom;
+        }
+
+        /* origin 图片保留原始尺寸；超出正文宽度时等比缩小 */
+        .wx-content .origin-photo img {
+            width: auto;
+            height: auto;
+            max-width: 100%;
             display: inline-block;
             vertical-align: bottom;
         }
@@ -1135,68 +1342,63 @@
             color: #000;
         }
 
-        /* ========== 编辑器特殊样式 ========== */
+        /* ========== 工作台控件 ========== */
 
         .style-options {
-            background: #fff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 10px 20px;
+            background: var(--paper);
+            border-bottom: 1px solid var(--rule-soft);
+            padding: 11px 20px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 26px;
             flex-wrap: wrap;
         }
 
         .style-option {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: #555;
+            gap: 10px;
         }
 
-        .style-option label { cursor: pointer; }
-
-        .style-option input[type="checkbox"] {
-            accent-color: var(--theme-color);
+        .style-option label {
+            cursor: pointer;
+            font-family: var(--ui-serif);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .14em;
+            color: var(--ink-soft);
         }
 
-        .style-option select {
-            padding: 4px 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 13px;
-            outline: none;
-        }
-
-        .style-option select:focus {
-            border-color: var(--theme-color);
-        }
-
-        /* 主题颜色选择器 */
-        .theme-colors {
+        /* 色板：墨滴 */
+        .theme-colors, .book-colors {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 9px;
         }
 
-        .theme-btn {
-            width: 28px;
-            height: 28px;
+        .theme-btn, .book-btn {
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            border: 2px solid #e0e0e0;
+            border: 2px solid var(--sheet);
+            box-shadow: 0 0 0 1px var(--rule), 0 1px 3px rgba(27, 33, 41, .12);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.15s, box-shadow 0.15s;
             position: relative;
         }
 
-        .theme-btn:hover {
-            transform: scale(1.1);
+        .theme-btn:hover, .book-btn:hover {
+            transform: scale(1.18);
         }
 
-        .theme-btn.active {
-            border-color: #333;
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
+        .theme-btn.active, .book-btn.active {
+            box-shadow: 0 0 0 2px var(--sheet), 0 0 0 4px var(--ink-soft);
+            transform: scale(1.08);
+        }
+
+        .theme-btn:focus-visible, .book-btn:focus-visible {
+            outline: 2px solid var(--azure);
+            outline-offset: 2px;
         }
 
         .theme-btn[data-color="#3daad6"] { background: #3daad6; }
@@ -1205,93 +1407,33 @@
         .theme-btn[data-color="#2d9a4e"] { background: #2d9a4e; }
         .theme-btn[data-color="#c45c3e"] { background: #c45c3e; }
 
-        .theme-custom {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px dashed #999;
-            cursor: pointer;
-            background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
-            position: relative;
-        }
-
-        .theme-custom:hover {
-            transform: scale(1.1);
-        }
-
-        .theme-custom.active {
-            border-style: solid;
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #333;
-        }
-
-        .theme-custom input[type="color"] {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .current-theme-preview {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            background: #3daad6;
-        }
-
-        /* 书籍颜色选择器 */
-        .book-colors {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .book-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid #e0e0e0;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .book-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .book-btn.active {
-            border-color: #333;
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
-        }
-
         .book-btn[data-color="#888888"] { background: #888888; }
         .book-btn[data-color="#6b7b8d"] { background: #6b7b8d; }
         .book-btn[data-color="#7a6b6b"] { background: #7a6b6b; }
         .book-btn[data-color="#5a7a5a"] { background: #5a7a5a; }
         .book-btn[data-color="#555555"] { background: #555555; }
 
-        .book-custom {
-            width: 28px;
-            height: 28px;
+        .theme-custom, .book-custom {
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            border: 2px dashed #999;
+            border: 2px solid var(--sheet);
+            box-shadow: 0 0 0 1px var(--rule), 0 1px 3px rgba(27, 33, 41, .12);
             cursor: pointer;
             background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
             position: relative;
+            transition: transform 0.15s, box-shadow 0.15s;
         }
 
-        .book-custom:hover {
-            transform: scale(1.1);
+        .theme-custom:hover, .book-custom:hover {
+            transform: scale(1.18);
         }
 
-        .book-custom.active {
-            border-style: solid;
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #333;
+        .theme-custom.active, .book-custom.active {
+            box-shadow: 0 0 0 2px var(--sheet), 0 0 0 4px var(--ink-soft);
         }
 
-        .book-custom input[type="color"] {
+        .theme-custom input[type="color"], .book-custom input[type="color"] {
             position: absolute;
             width: 100%;
             height: 100%;
@@ -1303,15 +1445,31 @@
             position: fixed;
             top: 20px;
             left: 50%;
-            transform: translateX(-50%) translateY(-60px);
-            background: #333;
-            color: #fff;
-            padding: 10px 24px;
-            border-radius: 6px;
-            font-size: 14px;
+            transform: translateX(-50%) translateY(-72px);
+            background: linear-gradient(180deg, #2e3742, var(--ink));
+            color: #f2eee3;
+            font-family: var(--ui-sans);
+            padding: 11px 24px;
+            border-radius: 999px;
+            font-size: 13px;
+            letter-spacing: .05em;
             z-index: 1000;
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: all 0.32s cubic-bezier(.2, .9, .3, 1.2);
+            box-shadow: 0 10px 28px rgba(27, 33, 41, .35);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .toast::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--seal);
+            box-shadow: 0 0 0 2px rgba(184, 69, 60, .35);
+            flex-shrink: 0;
         }
 
         .toast.show {
@@ -1320,44 +1478,107 @@
         }
 
         .status-bar {
-            background: #fff;
-            border-top: 1px solid #e0e0e0;
-            padding: 6px 20px;
-            font-size: 12px;
-            color: #999;
+            background: var(--ink);
+            border-top: 1px solid rgba(0, 0, 0, .35);
+            padding: 7px 22px;
+            font-family: var(--ui-sans);
+            font-size: 11px;
+            letter-spacing: .06em;
+            color: rgba(242, 238, 227, .55);
             display: flex;
             justify-content: space-between;
+            gap: 12px;
         }
 
+        .status-bar #charCount {
+            color: var(--gold);
+        }
+
+        /* 语法手册 */
         .syntax-help {
-            background: #fffbe6;
-            border: 1px solid #ffe58f;
-            border-radius: 6px;
-            padding: 10px 14px;
-            margin: 8px 20px;
+            background: var(--sheet);
+            border: 1px solid var(--rule);
+            border-left: 3px solid var(--azure);
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin: 12px 20px;
+            font-family: var(--ui-sans);
             font-size: 12px;
-            color: #8c6e00;
-            line-height: 1.8;
+            color: var(--ink-soft);
+            line-height: 2;
             display: none;
-            max-height: 35vh;
+            max-height: 38vh;
             overflow-y: auto;
+            box-shadow: var(--shadow-soft);
         }
 
         .syntax-help.show { display: block; }
 
+        .syntax-help strong {
+            display: block;
+            font-family: var(--ui-serif);
+            font-size: 13px;
+            letter-spacing: .20em;
+            color: var(--ink);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--rule-soft);
+        }
+
         .syntax-help code {
-            background: #fff;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-family: "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
-            font-size: 12px;
-            color: var(--theme-color);
+            background: rgba(61, 170, 214, .08);
+            border: 1px solid rgba(61, 170, 214, .18);
+            padding: 1px 7px;
+            border-radius: 5px;
+            font-family: var(--ui-mono);
+            font-size: 11.5px;
+            color: var(--azure-deep);
+        }
+
+        /* 细滚动条 */
+        .preview-content::-webkit-scrollbar,
+        .editor-input::-webkit-scrollbar,
+        .syntax-help::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .preview-content::-webkit-scrollbar-thumb,
+        .editor-input::-webkit-scrollbar-thumb,
+        .syntax-help::-webkit-scrollbar-thumb {
+            background: #c9c2b1;
+            border-radius: 999px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .preview-content::-webkit-scrollbar-thumb:hover,
+        .editor-input::-webkit-scrollbar-thumb:hover,
+        .syntax-help::-webkit-scrollbar-thumb:hover {
+            background: #b0a892;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .preview-content::-webkit-scrollbar-track,
+        .editor-input::-webkit-scrollbar-track,
+        .syntax-help::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition: none !important;
+                animation: none !important;
+            }
         }
 
         @media (max-width: 900px) {
             .main-container { flex-direction: column; }
             .editor-panel, .preview-panel { width: 100%; height: 50%; }
-            .preview-phone { width: 100%; border-radius: 0; }
+            .editor-panel { border-right: none; border-bottom: 1px solid var(--rule); }
+            .preview-phone { max-width: 100%; border-radius: 0; border-left: none; border-right: none; }
+            .byline { display: none; }
+            .wordmark-sub { display: none; }
         }
     </style>
 </head>
@@ -1365,27 +1586,27 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- 顶部工具栏 -->
-<div class="toolbar">
+<!-- 顶栏 -->
+<header class="toolbar">
     <div class="toolbar-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-        </svg>
-        谓无名微信排版编辑器——powerd by Rolo 
+        <span class="seal" aria-hidden="true">谓</span>
+        <span class="wordmark">谓无名<span class="wordmark-sub">排版工作台</span></span>
+        <span class="byline">Powered by Rolo</span>
     </div>
     <div class="toolbar-actions">
         <div class="undo-redo-group">
-            <button class="btn btn-undo-redo" id="undoBtn" onclick="undo()" disabled title="撤回 (Ctrl+Z)">
+            <button class="btn btn-undo-redo" id="undoBtn" onclick="undo()" disabled title="撤销 (Ctrl+Z)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                撤回
+                撤销
             </button>
-            <button class="btn btn-undo-redo" id="redoBtn" onclick="redo()" disabled title="回复 (Ctrl+Y)">
+            <button class="btn btn-undo-redo" id="redoBtn" onclick="redo()" disabled title="重做 (Ctrl+Y)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
-                回复
+                重做
             </button>
         </div>
-        <button class="btn btn-secondary" onclick="toggleHelp()" style="font-size:12px;">
-            📖 语法说明
+        <button class="btn btn-secondary" onclick="toggleHelp()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            语法手册
         </button>
         <button class="btn btn-secondary" onclick="loadSample()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1396,30 +1617,30 @@
             复制排版结果
         </button>
     </div>
-</div>
+</header>
 
 <!-- 主体 -->
 <div class="main-container">
     <!-- 编辑区 -->
-    <div class="editor-panel">
+    <section class="editor-panel">
         <div class="panel-header">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Markdown 编辑 — 输入文章内容
+            <span class="panel-dot" aria-hidden="true"></span>
+            文稿 · Markdown
             <label class="sync-scroll-label" title="开启后左右滚动同步">
                 <input type="checkbox" id="syncScrollToggle" class="sync-scroll-checkbox">
                 <span class="sync-scroll-switch"></span>
                 <span class="sync-scroll-text">同步滚屏</span>
             </label>
         </div>
-        <!-- 语法帮助 -->
         <div class="syntax-help" id="syntaxHelp">
-            <strong>特殊语法：</strong><br>
+            <strong>语法手册</strong>
             <code> >>> 编者按 <<< </code> 编者按框（四边细线框，蓝色标签，灰色正文14px）<br>
             <code>![book](url)</code> 书籍封面（url可留空，居中，带阴影，188px宽）<br>
             <code>[book:封面URL|书名|作者|出版社|年份]</code> 书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[enbook:封面URL|书名|作者|出版社|年份]</code> 英文书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[jpbook:封面URL|书名|作者|出版社|年份]</code> 日语书籍信息（封面URL可留空，居中，灰色12px，封面189px+阴影+▲+『』）<br>
-            <code>[universal:照片URL|第一行|第二行|...]</code> 通用图片标识（居中，照片+▲+多行文字，用|分行）<br>
+            <code>[universal:照片URL|第一行|第二行|...]</code> 通用图片标识（第一行自动加粗，照片+▲+多行文字，用|分行）<br>
+            <code>[origin:图片URL|第一行|第二行|...]</code> 原图尺寸图片标识（第一行自动加粗，图片按原始尺寸显示，超宽时等比缩小）<br>
             <code>### 标题 / 作者</code> 章节大标题（居中，#7d90a8，在分割线上方）<br>
             <code>---[dot]</code> 点线圆点分割线（···●···）<br>
             <code>---[toc]</code> 目录区（自动生成标题+分割线+240px滚动区）<br>
@@ -1428,7 +1649,7 @@
             <code>^①</code> 脚注编号（蓝色上标）<br>
             <code>（外文）</code> 半角括号内自动灰色小字12px<br>
             <code>---[notes]</code> 注释区开始（14px黑色标题+细线+240px滚动区）<br>
-            <code>^[① 脚注内容]</code> 注释条目（12px，蓝色编号+灰色文本）<br>
+            <code>^[①脚注内容]</code> 注释条目（12px，蓝色编号+灰色文本，编号后不留空格）<br>
             <code>---[/notes]</code> 注释区结束<br>
             <code>---[note]</code> 尾注区开始<br>
             <code>- ・ 内容</code> 尾注条目（12px灰色）<br>
@@ -1476,30 +1697,32 @@
                 </div>
             </div>
         </div>
-        <textarea class="editor-input" id="editor" placeholder="在此输入 Markdown 内容...&#10;&#10;特殊语法：&#10;>>> 编者按内容 — 编者按框&#10;## 小标题 — 蓝色居中（分割线下方）&#10;### 大标题 / 作者 — 章节标题（分割线上方）&#10;---[dot] — 点线分割线&#10;---[notes] / ---[/notes] — 注释区（可滚动）&#10;^[① 脚注] — 注释条目&#10;&#10;快捷键：Ctrl+Enter 复制排版结果" oninput="updatePreview()"></textarea>
-    </div>
+        <textarea class="editor-input" id="editor" placeholder="在此输入 Markdown 内容...&#10;&#10;特殊语法：&#10;>>> 编者按内容 — 编者按框&#10;## 小标题 — 蓝色居中（分割线下方）&#10;### 大标题 / 作者 — 章节标题（分割线上方）&#10;---[dot] — 点线分割线&#10;---[notes] / ---[/notes] — 注释区（可滚动）&#10;^[①脚注] — 注释条目&#10;&#10;快捷键：Ctrl+Enter 复制排版结果" oninput="updatePreview()"></textarea>
+    </section>
 
     <!-- 预览区 -->
-    <div class="preview-panel">
+    <section class="preview-panel">
         <div class="panel-header">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            实时预览 — 模拟手机显示
+            <span class="panel-dot" aria-hidden="true"></span>
+            手机预览 · 微信效果
+            <span class="panel-meta">正文宽度 414px</span>
         </div>
         <div class="preview-content">
             <div class="preview-phone">
+                <div class="phone-statusbar" aria-hidden="true"><span class="sb-side">‹</span><span class="sb-title">谓无名</span><span class="sb-side sb-dots">···</span></div>
                 <div class="preview-inner">
                     <div class="wx-content" id="preview"></div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 </div>
 
 <!-- 底部状态栏 -->
-<div class="status-bar">
+<footer class="status-bar">
     <span id="charCount">共 0 字</span>
-    <span>提示：复制排版结果后，可直接粘贴到微信公众号编辑器中</span>
-</div>
+    <span>复制排版结果后，直接粘贴进微信公众号编辑器</span>
+</footer>
 
 <script>
     marked.setOptions({ breaks: true, gfm: true });
@@ -1639,6 +1862,7 @@
 
     let syncAnchors = [];
     let previewHighlightMarks = [];
+    let previewHighlightRanges = [];
 
     function buildSyncAnchors() {
         const previewContent = document.querySelector('.preview-content');
@@ -1646,10 +1870,21 @@
         syncAnchors = [];
         document.querySelectorAll('#preview .sync-anchor').forEach(el => {
             const rect = el.getBoundingClientRect();
-            syncAnchors.push({
-                ln: parseInt(el.dataset.ln, 10),
-                top: rect.top - containerRect.top + previewContent.scrollTop
-            });
+            let top = rect.top - containerRect.top + previewContent.scrollTop;
+            // 定高滚动框（.notes-scroll/.toc-scroll）内的锚点：几何位置随内层滚动条
+            // 伸出框外、盖住后续内容（如作者简介），破坏 y→行号 映射的单调性
+            // → 钳制进滚动框自身范围：框内选择仍按可见位置映射，框后内容不再被误判
+            let n = el.parentElement;
+            while (n && n !== previewContent && n !== document.body) {
+                const oy = getComputedStyle(n).overflowY;
+                if ((oy === 'auto' || oy === 'scroll' || oy === 'hidden') && n.scrollHeight > n.clientHeight + 1) {
+                    const nr = n.getBoundingClientRect();
+                    const boxTop = nr.top - containerRect.top + previewContent.scrollTop;
+                    top = Math.max(boxTop, Math.min(top, boxTop + n.clientHeight));
+                }
+                n = n.parentElement;
+            }
+            syncAnchors.push({ ln: parseInt(el.dataset.ln, 10), top });
         });
         syncAnchors.sort((a, b) => a.ln - b.ln);
     }
@@ -1717,6 +1952,8 @@
         html = postprocessHtml(html);
 
         previewHighlightMarks = [];   // innerHTML 重建后旧 mark 已消失，重置引用
+        previewHighlightRanges = [];
+        if (window.CSS && CSS.highlights) CSS.highlights.delete('preview-sync-highlight');
         preview.innerHTML = html;
 
         // 应用主题色到预览区域
@@ -1786,12 +2023,12 @@
         });
 
         // 书籍色：主色（标题/名字）
-        preview.querySelectorAll('.book-title, .book-marker span, .book-meta, .enbook-title, .jpbook-title, .person-name, .person-name strong').forEach(el => {
+        preview.querySelectorAll('.book-title, .book-meta, .enbook-title, .jpbook-title, .person-name, .person-name strong').forEach(el => {
             el.style.color = currentBookColor;
         });
 
         // 书籍色：辅助色（元信息/简介/标记）
-        preview.querySelectorAll('.enbook-marker span, .enbook-meta, .jpbook-marker span, .jpbook-meta, .person-marker span, .person-bio').forEach(el => {
+        preview.querySelectorAll('.book-marker span, .enbook-marker span, .enbook-meta, .jpbook-marker span, .jpbook-meta, .person-marker span, .person-bio, .person-bio .bracket-note, .person-bio .foreign-note').forEach(el => {
             el.style.color = currentBookColorLight;
         });
     }
@@ -1964,9 +2201,9 @@
                 continue;
             }
 
-            // 注释区内的脚注条目 ^[①脚注文本] 或 ^[① 脚注文本]（空格可选，渲染时不显示空格）
+            // 注释区内的脚注条目 ^[①脚注文本] 或 ^[① 脚注文本]（空格可选，渲染时统一移除）
             if (inNotesSection) {
-                let fnMatch = line.match(/^\^\[([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶㊷㊸㊹㊺㊻㊼㊽㊾㊿])(.+)\]$/);
+                let fnMatch = line.match(/^\^\[([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶㊷㊸㊹㊺㊻㊼㊽㊾㊿])\s*(.+?)\s*\]$/);
                 if (fnMatch) {
                     result.push('<div class="footnote-item"><span class="fn-num">' + fnMatch[1] + '</span><span class="fn-text">' + fnMatch[2] + '</span></div>');
                     continue;
@@ -2022,14 +2259,49 @@
                 let content = line.trim().slice(11, -1);
                 let parts = content.split('|');
                 if (parts.length >= 3) {
+                    let title = parts[1];
+                    // 第一项自动加粗；兼容并清理旧的 **标题|**说明 写法
+                    if (title.startsWith('**') && parts[2].startsWith('**')) {
+                        title = title.slice(2);
+                        parts[2] = parts[2].slice(2);
+                    }
+                    title = title.replace(/^\*\*|\*\*$/g, '');
                     result.push(`<section class="person-info">`);
                     // 图片 URL 留空 → 纯文字卡片，不输出空 src 的 img（微信里会显示裂图）
                     if (parts[0].trim() !== '') {
                         result.push(`<p class="person-photo"><img src="${parts[0]}" /></p>`);
                     }
                     result.push(`<p class="person-marker"><span>▲</span></p>`);
-                    result.push(`<p class="person-name">${parts[1]}</p>`);
+                    result.push(`<p class="person-name"><strong>${title}</strong></p>`);
                     for (let i = 2; i < parts.length; i++) {
+                        result.push(`<p class="person-bio">${parts[i]}</p>`);
+                    }
+                    result.push(`</section>`);
+                    result.push(`<section style="line-height:1em;margin:0 8px;"><p><br/></p></section>`);
+                    continue;
+                }
+            }
+
+            // [origin:图片URL|第一行|第二行|...] 原图尺寸图片标识（居中，超宽时等比缩小）
+            if (line.trim().startsWith('[origin:') && line.trim().endsWith(']')) {
+                let content = line.trim().slice(8, -1);
+                let parts = content.split('|');
+                if (parts.length >= 3) {
+                    let title = parts[1];
+                    let firstMetaIndex = 2;
+                    // 第一项自动加粗；兼容并清理旧的 **标题|**说明 写法
+                    if (title.startsWith('**') && parts[2].startsWith('**')) {
+                        title = title.slice(2);
+                        parts[2] = parts[2].slice(2);
+                    }
+                    title = title.replace(/^\*\*|\*\*$/g, '');
+                    result.push(`<section class="person-info origin-info">`);
+                    if (parts[0].trim() !== '') {
+                        result.push(`<p class="person-photo origin-photo"><img src="${parts[0]}" /></p>`);
+                    }
+                    result.push(`<p class="person-marker"><span>▲</span></p>`);
+                    result.push(`<p class="person-name"><strong>${title}</strong></p>`);
+                    for (let i = firstMetaIndex; i < parts.length; i++) {
                         result.push(`<p class="person-bio">${parts[i]}</p>`);
                     }
                     result.push(`</section>`);
@@ -2356,7 +2628,7 @@
     }
 
     // 复制富文本到剪贴板
-    function copyRichText() {
+    async function copyRichText() {
         const preview = document.getElementById('preview');
 
         if (!preview.innerHTML.trim()) {
@@ -2365,8 +2637,27 @@
         }
 
         const styledHtml = generateInlineStyledHtml(preview);
+        const plainText = preview.innerText;
 
-        // 创建临时容器，放入带内联样式的 HTML
+        // 优先使用现代剪贴板 API，让浏览器生成标准的 HTML 剪贴板格式。
+        // 微信编辑器对这种格式中的图片节点兼容性更好；旧的 copy 事件手工注入
+        // 只写入一段 HTML 字符串，部分浏览器粘贴时会保留文字但丢掉图片。
+        if (window.isSecureContext && navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
+            try {
+                const item = new ClipboardItem({
+                    'text/html': new Blob([styledHtml], { type: 'text/html' }),
+                    'text/plain': new Blob([plainText], { type: 'text/plain' })
+                });
+                await navigator.clipboard.write([item]);
+                showToast('✅ 复制成功！可直接粘贴到微信公众号编辑器');
+                return;
+            } catch (err) {
+                console.warn('现代剪贴板复制失败，改用浏览器原生复制：', err);
+            }
+        }
+
+        // 兼容回退：选中真实 DOM 后让浏览器原生生成剪贴板数据。
+        // 不再拦截 copy 事件，避免绕过浏览器对 <img> 节点的处理。
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = styledHtml;
         tempDiv.style.position = 'fixed';
@@ -2374,25 +2665,16 @@
         tempDiv.style.top = '0';
         tempDiv.style.width = '720px';
         tempDiv.style.background = '#ffffff';
-        tempDiv.style.opacity = '0';
+        tempDiv.setAttribute('contenteditable', 'true');
 
         document.body.appendChild(tempDiv);
 
-        // 选中临时容器的内容
         const range = document.createRange();
         range.selectNodeContents(tempDiv);
 
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
-
-        // 监听 copy 事件，注入 text/html 格式数据（确保粘贴时带样式）
-        let copyHandler = function(e) {
-            e.preventDefault();
-            e.clipboardData.setData('text/html', styledHtml);
-            e.clipboardData.setData('text/plain', preview.innerText);
-        };
-        document.addEventListener('copy', copyHandler);
 
         try {
             const success = document.execCommand('copy');
@@ -2404,7 +2686,6 @@
         } catch (err) {
             showToast('复制失败，请手动选中预览区内容复制');
         } finally {
-            document.removeEventListener('copy', copyHandler);
             selection.removeAllRanges();
             document.body.removeChild(tempDiv);
         }
@@ -2412,6 +2693,38 @@
 
     function generateInlineStyledHtml(preview) {
         const clone = preview.cloneNode(true);
+
+        // ① 移除仅供预览同步/选区定位的隐藏锚点：
+        //    它们是空 <div>，div→section 转换后会变成空 <section> 并被加上正文样式，
+        //    微信编辑器会把空 section 规范化成空段落 —— 每个内容块前都会多空一行。
+        clone.querySelectorAll('.sync-anchor').forEach(el => el.remove());
+
+        // ② 删除含换行的纯空白文本节点：
+        //    模板 join('\n') 会在块级元素之间留下换行文本节点，序列化进剪贴板后
+        //    微信编辑器可能把它转成 <br>/空行。含 \n 的纯空白节点一定是模板拼接产物
+        //    （正文里的有意义空格不含换行，marked breaks 已把源换行转成 <br>），可安全删除。
+        (function stripTemplateWhitespace(root) {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            const junk = [];
+            let node;
+            while ((node = walker.nextNode())) {
+                if (node.nodeValue.indexOf('\n') !== -1 && !/\S/.test(node.nodeValue)) {
+                    junk.push(node);
+                }
+            }
+            junk.forEach(n => n.parentNode.removeChild(n));
+        })(clone);
+
+        // ③ 图片相对路径 → 绝对 URL：
+        //    经 http(s) 访问本站（如 https://tools.weiwuming.cn）时，assets/ 相对路径
+        //    解析为完整 https URL，粘贴进微信编辑器后图片才能正常加载；
+        //    file:// 本地打开时微信无法读取本地文件，图片仍需在后台单独上传
+        clone.querySelectorAll('img').forEach(img => {
+            const src = img.getAttribute('src') || '';
+            if (src && !/^(https?:|data:|blob:)/i.test(src)) {
+                try { img.setAttribute('src', new URL(src, document.baseURI).href); } catch (e) {}
+            }
+        });
 
         let divNode = clone.querySelector('div');
 
@@ -2535,6 +2848,11 @@
         // 所有普通 p
         clone.querySelectorAll('p').forEach(el => {
             if (
+                // 占位空行（<p><br/></p>）不属于正文段落，交给下面的专属规则处理，
+                // 否则会被加上 line-height:2em / 15px 字号，1em 空行被撑成 2em
+                !(el.querySelector('br') && !el.textContent.trim()) &&
+                // 编者按标签在前面已有专属规则（主题色），不能被覆盖成黑色正文
+                !el.classList.contains('editor-note-label') &&
                 !el.classList.contains('notes-header') &&
                 !el.classList.contains('book-marker') &&
                 !el.classList.contains('book-title') &&
@@ -2565,6 +2883,17 @@
                     'margin: 0px 8px; padding: 0px; box-sizing: border-box; font-size: 15px; color: #000000; line-height: 2em; text-align: justify; font-family: 宋体, SimSun, serif;'
                 );
                 el.setAttribute('align', 'justify');
+            }
+        });
+
+        // 占位空行（<p><br/></p>，分割线内部除外）：固定 1em 高，
+        // 保证微信里段间距与预览一致，不会忽大忽小
+        clone.querySelectorAll('p').forEach(el => {
+            if (el.querySelector('br') && !el.textContent.trim() && !el.closest('.divider')) {
+                el.setAttribute(
+                    'style',
+                    'margin: 0px; padding: 0px; box-sizing: border-box; line-height: 1em; font-size: 15px;'
+                );
             }
         });
 
@@ -2625,7 +2954,7 @@
         clone.querySelectorAll('.book-marker span').forEach(el => {
             el.setAttribute(
                 'style',
-                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 12px; color: ' + currentBookColor + '; letter-spacing: 0.544px; font-family: 宋体, SimSun, serif;'
+                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 12px; color: ' + currentBookColorLight + '; font-weight: 400; font-style: normal; letter-spacing: 0.544px; font-family: 宋体, SimSun, serif;'
             );
         });
 
@@ -2783,6 +3112,13 @@
             );
         });
 
+        clone.querySelectorAll('.origin-photo img').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px auto; padding: 0px; box-sizing: border-box; width: auto; height: auto; max-width: 100%; display: inline-block; vertical-align: bottom;'
+            );
+        });
+
         clone.querySelectorAll('.person-marker').forEach(el => {
             el.setAttribute(
                 'style',
@@ -2867,11 +3203,12 @@
             );
         });
 
-        // 注释滚动区（复制到后台时去掉 max-height 和 overflow，完全自适应内容高度）
-        clone.querySelectorAll('.notes-scroll').forEach(el => {
+        // 注释/目录滚动区：微信编辑器支持 overflow-y 滚动框（135editor 式），
+        // 保留 240px 限高，长注释/目录在微信里以滚动框呈现
+        clone.querySelectorAll('.notes-scroll, .toc-scroll').forEach(el => {
             el.setAttribute(
                 'style',
-                'display: block; width: 100%; padding: 10px; vertical-align: top; background: #ffffff; box-sizing: border-box;'
+                'margin: 0px; padding: 10px; display: block; width: 100% !important; max-width: 100% !important; max-height: 240px; overflow-y: auto; vertical-align: top; background: #ffffff; box-sizing: border-box;'
             );
         });
 
@@ -2885,17 +3222,19 @@
 
         // 括号注释（12px灰色）
         clone.querySelectorAll('.bracket-note').forEach(el => {
+            const noteColor = el.closest('.person-bio') ? currentBookColorLight : '#888888';
             el.setAttribute(
                 'style',
-                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 12px; color: #888888; font-family: 宋体, SimSun, serif;'
+                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 12px; color: ' + noteColor + '; font-family: 宋体, SimSun, serif;'
             );
         });
 
         // 外文注释
         clone.querySelectorAll('.foreign-note').forEach(el => {
+            const noteColor = el.closest('.person-bio') ? currentBookColorLight : '#888888';
             el.setAttribute(
                 'style',
-                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 12px; color: #888888; font-family: 宋体, SimSun, serif;'
+                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 12px; color: ' + noteColor + '; font-family: 宋体, SimSun, serif;'
             );
         });
 
@@ -2919,22 +3258,6 @@
             el.setAttribute(
                 'style',
                 'margin: 0px 0px 8px; padding: 0px; box-sizing: border-box; border-width: 1px medium medium; border-style: solid none none; border-color: rgba(0, 0, 0, 0.1) currentcolor currentcolor; border-image: initial; height: 0px; transform: scale(1, 0.5); -webkit-transform: scale(1, 0.5); -moz-transform: scale(1, 0.5); -o-transform: scale(1, 0.5);'
-            );
-        });
-
-        // 注释滚动区
-        clone.querySelectorAll('.notes-scroll').forEach(el => {
-            el.setAttribute(
-                'style',
-                'margin: 0px; padding: 10px; display: block; width: 100% !important; max-width: 100% !important; max-height: 240px; overflow-y: auto; vertical-align: top; background: #ffffff; box-sizing: border-box;'
-            );
-        });
-
-        // 目录滚动区
-        clone.querySelectorAll('.toc-scroll').forEach(el => {
-            el.setAttribute(
-                'style',
-                'margin: 0px; padding: 10px; display: block; width: 100% !important; max-width: 100% !important; max-height: 240px; overflow-y: auto; vertical-align: top; background: #ffffff; box-sizing: border-box;'
             );
         });
 
@@ -3142,11 +3465,43 @@
             );
         });
 
+        // 章节大标题（### 标题 / 作者）——此前无专属规则，会被当普通正文段落处理而丢样式
+        clone.querySelectorAll('.chapter-title').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px 8px; padding: 0px; box-sizing: border-box; text-align: center; line-height: 1.75; color: #000000; font-size: 15px; background-color: #ffffff; font-family: 宋体, SimSun, serif;'
+            );
+        });
+
+        clone.querySelectorAll('.chapter-title .title-text').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 16px; color: #a17a7a; letter-spacing: 0.5px; font-weight: bold; text-align: center; line-height: 1.75; font-family: 宋体, SimSun, serif;'
+            );
+            el.setAttribute('align', 'center');
+        });
+
+        clone.querySelectorAll('.chapter-title .actual-title').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 0px; box-sizing: border-box; color: #7d90a8; font-size: 16px; font-weight: bold; letter-spacing: 0.5px; font-family: 宋体, SimSun, serif;'
+            );
+        });
+
+        clone.querySelectorAll('.chapter-title .author-name').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 15px; color: #7d90a8; font-weight: normal; text-align: center; line-height: 1.75; font-family: 宋体, SimSun, serif;'
+            );
+            el.setAttribute('align', 'center');
+        });
+
         return '<section class="article135" style="box-sizing: border-box; margin: 0 0px;">' + clone.innerHTML + '</section>';
     }
 
         // 载入示例内容
         function loadSample() {
+            const sampleImageBaseUrl = 'https://img.weiwuming.cn/weiwuming';
             document.getElementById('editor').value = `>>> 当我们谈论"日本大众文化"时，最先跃入脑海的，或许是风靡全球的动漫，又或是那些被推上神坛的精英创作者与不朽名作。我们早已习惯将文化史视作少数天才的"英雄谱"或"纪念碑"。然而，文化真的只是一场属于少数人的独白吗？
 
 隔海相望的日本，同样涌动着这样一条隐秘而磅礴的文化脉络。《浮世通鉴：日本大众文化史》一书，扬弃了以杰出个体及其经典作品为中心的叙述传统，借用民俗学家柳田国男的民俗学视角，将聚光灯从天才的单人舞台，转向了台下无数的普通人——即"作为群体的作者"。
@@ -3156,13 +3511,23 @@
 然而，本书并没有止步于对"集体智慧"的歌颂。在媒介技术的历次更迭中，潜藏在文化肌理中的权力运作同样引人深思。当木版印刷让"业余爱好者"得以登上历史舞台，随后的广播、电视乃至战时体制，又轻易将这些充满表达欲的大众，异化为被国家权力动员的"素人"。
 <<<
 
-[book:https://mmbiz.qpic.cn/mmbiz_jpg/piavSTlFS6QGvia9tZFYHicbtdeTn4u7IBSQhjECuEjJqqBBsdSqmm14eyOd8Z5T7vvgtJk0SyFcVj54ThnVVndSR1TowmndEOPYZf5sSjibccE/640?wx_fmt=jpeg&from=appmsg|浮世通鉴：日本大众文化史|日文研项目组 编著，党蓓蓓 译|北京大学出版社|2025]
+[book:${sampleImageBaseUrl}/d05e09a0fa6ba43f.jpg|浮世通鉴：日本大众文化史|日文研项目组 编著，党蓓蓓 译|北京大学出版社|2025]
 
-[enbook:https://mmbiz.qpic.cn/sz_mmbiz_jpg/Cicib7J1ibZFb617NdGwjibgmaXpftGofU1qBG1djojtGXK37jBaUFcozBttiaXj2aiaaf8jPCibjGZRlytscBYqciaZIg/640?wx_fmt=jpeg&from=appmsg|Reactionary Modernism: Technology, Culture, and Politics in Weimar and the Third Reich|Jeffrey Herf|Cambridge University Press|1984]
+[enbook:${sampleImageBaseUrl}/b2e9546f94c04fa5.jpg|Reactionary Modernism: Technology, Culture, and Politics in Weimar and the Third Reich|Jeffrey Herf|Cambridge University Press|1984]
 
-[jpbook:https://mmbiz.qpic.cn/sz_mmbiz_png/Cicib7J1ibZFb7ibplNAraRr3D3QicNmVgx0iaichwn0vTjMNzlaI0nyTdlGIJJRbjDjuPicmCTKT170PnzbXCcEGTicoBA/640?wx_fmt=png&from=appmsg|構想力の論理 第二|三木清|岩波書店|2023]
+[jpbook:${sampleImageBaseUrl}/9851d77f12446b51.png|構想力の論理 第二|三木清|岩波書店|2023]
 
-[universal:https://mmbiz.qpic.cn/mmbiz_jpg/Cicib7J1ibZFb6rXR6F5ibQI8aVcQNXXghROVkMqyI9ibYE314VBZibY6ibiaOqO9icyADlj5jZdWxYDAOLFHMYwaLphlbw/640?wx_fmt=jpeg|舒群（1913~89）|作家，代表作《没有祖国的孩子》]
+[universal:${sampleImageBaseUrl}/91165dfbda0dfceb.jpg|舒群（1913~89）|作家，代表作《没有祖国的孩子》]
+
+[origin:${sampleImageBaseUrl}/521c36bbccf08ded.jpg|赤崁楼前“郑成功议和图”雕塑与福康安平台碑|&#x6444;影：XXX,2018.5.16]
+
+[origin:${sampleImageBaseUrl}/ab9353a30ea09aec.jpg|『国性爺合戦』|&#x8C4A;原国周，浮世绘，n×ncm，1872|（某某博物馆藏）]
+
+[universal:${sampleImageBaseUrl}/fe18879358d76317.jpg|『東洋平和の道』海报|&#x5BFC;演：铃木重吉，编剧：铃木重吉/张迷生|上映：1936，片长: 101分钟]
+
+[universal:${sampleImageBaseUrl}/f8a81e8ccb2f04e0.jpg|『新世紀エヴァンゲリオン』海报|导演: 庵野秀明/鹤卷和哉等，编剧: 庵野秀明/榎户洋司等|首播：1995.10.4，片长：24分钟×26集]
+
+[universal:${sampleImageBaseUrl}/45d502003f6d59a4.jpg|《木兰从军》广告|导演：卜万苍，编剧：欧阳予倩|上映：1939，片长：89分钟]
 
 
 ## 通史背后的动机是什么
@@ -3322,7 +3687,7 @@
 
 ---[bio-title:作者简介]
 
-[bio-img:https://mmbiz.qpic.cn/sz_mmbiz_jpg/piavSTlFS6QGicTwK5x8A5KjNzKMiaGVpZLveoF2Wv7WIksXa7cSt0LK4UJUrFzcBMC0SfibBW7L14ywx9UJibFibPScB5ibbiawxmociaodicRkVtV2E/640?wx_fmt=jpeg&from=appmsg]
+[bio-img:${sampleImageBaseUrl}/025f3bb3dec2ecd2.jpg]
 
 [bio:国际日本文化研究中心（"日文研"）成立于1987年，致力于开展国际性、跨学科且全面的日本文化研究。日文研从2016—2021年全力推进大众文化研究项目，为从结构上综合把握日本文化的全体像，对日本大众文化进行了历时性、国际性的考察，以期打造全新的日本形象和文化观。]
 
@@ -3331,7 +3696,7 @@
 
 ---[bio-title:译者简介]
 
-[bio-img:https://mmbiz.qpic.cn/sz_mmbiz_jpg/piavSTlFS6QGQ4Cq3icoEqTJF72Qaw0pwV1gme7JsTgtNOIABBia11yHlAU74bibM3Ox7tbTJy0rj0TjmB5ibQFl7M0RXXGQy5ziaMmWCKFj6JXrQ/640?wx_fmt=jpeg&from=appmsg]
+[bio-img:${sampleImageBaseUrl}/fc4b07403fd57747.jpg]
 
 [bio:党蓓蓓，北京外国语大学北京日本学研究中心博士。曾在日本东京大学访问学习。河北大学外国语学院日语系讲师。]
 
@@ -3340,14 +3705,14 @@
 
 ---[reading-title:延伸阅读]
 
-[reading-book:鲶鱼之怒：日本大众文化中的天灾·疫病·怪异|日文研项目组 编|彭菲 译|https://mmbiz.qpic.cn/sz_mmbiz_jpg/piavSTlFS6QEZkIT9kQ4eW4Jgtlj4BLcwNicBZUxTSW4taSnKUR6Ic0MibSzNNBQdsIyPstnePBrc9dQ7713ibRuUYhHaibTt4bJaA2VWXHgPLz0/640?wx_fmt=jpeg&from=appmsg]
+[reading-book:鲶鱼之怒：日本大众文化中的天灾·疫病·怪异|日文研项目组 编|彭菲 译|${sampleImageBaseUrl}/704488369c4925bc.jpg]
 
 
-[reading-book:身与非身：日本大众文化中的身体|[日]安井真奈美，[墨西哥]埃尔南德斯·阿尔瓦罗 编|魏正 译|https://mmbiz.qpic.cn/sz_mmbiz_jpg/piavSTlFS6QGZHP7wfP7jF6UvLtOJPWeEoDSBMiaotdEDyzxjcKF4dblzAKibPgibXXMxAjpqibJ2vvXsSe3wvTObCEqjumHjdF26sX18m45aSpU/640?wx_fmt=jpeg&from=appmsg]
+[reading-book:身与非身：日本大众文化中的身体|[日]安井真奈美，[墨西哥]埃尔南德斯·阿尔瓦罗 编|魏正 译|${sampleImageBaseUrl}/29e296d2de1cf013.jpg]
 
-[reading-enbook:Heidegger's Crisis: Philosophy and Politics in Nazi Germany|Hans Sluga, David G. Stern|Cambridge University Press, 1984|https://mmbiz.qpic.cn/sz_mmbiz_jpg/Cicib7J1ibZFb7gZ2f6qgiasZibRcglRQd5p3tXAHAEJ96hCQ1LAmicbZbRv8BLfBMFcpou5kSe6VqDbUPj4OsYsKS7A/640?wx_fmt=jpeg&from=appmsg]
+[reading-enbook:Heidegger's Crisis: Philosophy and Politics in Nazi Germany|Hans Sluga, David G. Stern|Cambridge University Press, 1984|${sampleImageBaseUrl}/487493d8760ad1e0.jpg]
 
-[reading-jpbook:岩波講座 アジア・太平洋戦争〈3〉動員・抵抗・翼賛|倉沢愛子ほか　編集|岩波書店, 2023|https://mmbiz.qpic.cn/sz_mmbiz_jpg/Cicib7J1ibZFb7ibplNAraRr3D3QicNmVgx0iaFPmgyrXl0fUnkdhztNo8clI8ge4ib6KRAqBbonIyPKh6QkHR7DVv4QQ/640?wx_fmt=jpeg&from=appmsg]
+[reading-jpbook:岩波講座 アジア・太平洋戦争〈3〉動員・抵抗・翼賛|倉沢愛子ほか　編集|岩波書店, 2023|${sampleImageBaseUrl}/af05a0f4564e79ac.jpg]
 
 ---[/reading]
 
@@ -3368,7 +3733,7 @@
 
 <section class="mp_profile_iframe_wrp">
 <section class="_135editor">
-<mp-common-profile data-pluginname="mpprofile" data-nickname="谓无名" data-alias="grandviewea" data-from="0" data-headimg="https://mmbiz.qlogo.cn/sz_mmbiz_png/Cicib7J1ibZFb68XkWr678pCFk2jGcAg3YDyz7ytXs0VGKRz4eEgEhQQgDYM05eSRxgJ3iaePGyGRiaWTMtNTbtwVCw/0?wx_fmt=png" data-signature="推送东亚文史研究的成果与东亚知识人的走读经验，寻找东亚论述的"虫洞"和"黑洞"，提供洞见，保持谦卑，保持开放。" data-id="Mzg3MDc0MjkzNQ==" data-is_biz_ban="0"></mp-common-profile>
+<mp-common-profile data-pluginname="mpprofile" data-nickname="谓无名" data-alias="grandviewea" data-from="0" data-headimg="https://mmbiz.qlogo.cn/sz_mmbiz_png/Cicib7J1ibZFb68XkWr678pCFk2jGcAg3YDyz7ytXs0VGKRz4eEgEhQQgDYM05eSRxgJ3iaePGyGRiaWTMtNTbtwVCw/0?wx_fmt=png" data-signature="推送东亚文史研究的成果与东亚知识人的走读经验，寻找东亚论述的&quot;虫洞&quot;和&quot;黑洞&quot;，提供洞见，保持谦卑，保持开放。" data-id="Mzg3MDc0MjkzNQ==" data-is_biz_ban="0"></mp-common-profile>
 </section>
 </section>`;
 
@@ -3501,6 +3866,63 @@
         const editor = document.getElementById('editor');
         const preview = document.getElementById('preview');
         const previewContent = document.querySelector('.preview-content');
+        const editorPanel = document.querySelector('.editor-panel');
+        let editorVisualRange = null;
+        let editorHighlightLayer = null;
+
+        function getEditorHighlightLayer() {
+            if (!editorHighlightLayer) {
+                editorHighlightLayer = document.createElement('div');
+                editorHighlightLayer.className = 'editor-sync-highlight-layer';
+                editorHighlightLayer.setAttribute('aria-hidden', 'true');
+                editorPanel.appendChild(editorHighlightLayer);
+            }
+            return editorHighlightLayer;
+        }
+
+        function clearEditorHighlight() {
+            editorVisualRange = null;
+            if (editorHighlightLayer) editorHighlightLayer.replaceChildren();
+        }
+
+        function measureEditorRangeRects(start, end) {
+            const mirror = _editorMirror();
+            mirror.textContent = '';
+            mirror.appendChild(document.createTextNode(editor.value.substring(0, start)));
+            const selected = document.createElement('span');
+            selected.textContent = editor.value.substring(start, end) || '\u200b';
+            mirror.appendChild(selected);
+            mirror.appendChild(document.createTextNode(editor.value.substring(end)));
+            const mirrorRect = mirror.getBoundingClientRect();
+            return Array.from(selected.getClientRects()).map(rect => ({
+                left: rect.left - mirrorRect.left,
+                top: rect.top - mirrorRect.top,
+                width: Math.max(2, rect.width),
+                height: rect.height
+            })).filter(rect => rect.height > 0);
+        }
+
+        function renderEditorHighlight() {
+            if (!editorVisualRange) return;
+            const layer = getEditorHighlightLayer();
+            const panelRect = editorPanel.getBoundingClientRect();
+            const editorRect = editor.getBoundingClientRect();
+            layer.style.left = (editorRect.left - panelRect.left) + 'px';
+            layer.style.top = (editorRect.top - panelRect.top) + 'px';
+            layer.style.width = editorRect.width + 'px';
+            layer.style.height = editorRect.height + 'px';
+            layer.replaceChildren();
+
+            measureEditorRangeRects(editorVisualRange.start, editorVisualRange.end).forEach(rect => {
+                const el = document.createElement('span');
+                el.className = 'editor-sync-highlight-rect';
+                el.style.left = rect.left + 'px';
+                el.style.top = (rect.top - editor.scrollTop) + 'px';
+                el.style.width = rect.width + 'px';
+                el.style.height = rect.height + 'px';
+                layer.appendChild(el);
+            });
+        }
 
         // ── 工具：遍历 preview 所有文本节点，拼成全文及位置表 ──
         function getPreviewTextNodes() {
@@ -3515,8 +3937,10 @@
             return { nodes, fullText };
         }
 
-        // ── 编辑器→预览：用 <mark> 注入高亮，不依赖 window.getSelection ──
+        // ── 编辑器→预览：使用纯视觉高亮，不改变 window.getSelection ──
         function clearPreviewHighlight() {
+            if (window.CSS && CSS.highlights) CSS.highlights.delete('preview-sync-highlight');
+            previewHighlightRanges = [];
             previewHighlightMarks.forEach(mark => {
                 if (!mark.parentNode) return;
                 while (mark.firstChild) mark.parentNode.insertBefore(mark.firstChild, mark);
@@ -3527,11 +3951,30 @@
 
         // 给定节点表与全局 [idx,endIdx) 区间，注入 <mark>
         function markByIndex(nodes, idx, endIdx) {
+            const ranges = [];
             for (const { node, start } of nodes) {
                 const nodeEnd = start + node.textContent.length;
                 if (nodeEnd <= idx || start >= endIdx) continue;
                 const localStart = Math.max(0, idx - start);
                 const localEnd = Math.min(node.textContent.length, endIdx - start);
+                const range = document.createRange();
+                range.setStart(node, localStart);
+                range.setEnd(node, localEnd);
+                ranges.push(range);
+            }
+
+            // CSS Custom Highlight 不修改预览 DOM，也不会污染复制出的 HTML。
+            if (ranges.length && window.CSS && CSS.highlights && typeof Highlight !== 'undefined') {
+                previewHighlightRanges = ranges;
+                CSS.highlights.set('preview-sync-highlight', new Highlight(...ranges));
+                return;
+            }
+
+            // 旧浏览器回退：用 <mark> 包裹文本。
+            for (const range of ranges) {
+                const node = range.startContainer;
+                const localStart = range.startOffset;
+                const localEnd = range.endOffset;
                 let target = node;
                 if (localEnd < target.textContent.length) target.splitText(localEnd);
                 if (localStart > 0) target = target.splitText(localStart);
@@ -3543,9 +3986,33 @@
             }
         }
 
+        // 目标在定高滚动框（.notes-scroll/.toc-scroll）内时，先把各内层滚动条滚到
+        // 能看见它的位置，再由外层 previewContent 统一定位——否则外层滚到位了，
+        // 目标仍藏在内层滚动条的折叠区里
+        function scrollNestedScrollersTo(el) {
+            let n = el.parentElement;
+            while (n && n !== previewContent && n !== document.body) {
+                const oy = getComputedStyle(n).overflowY;
+                if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight + 1) {
+                    const nr = n.getBoundingClientRect();
+                    const er = el.getBoundingClientRect();
+                    if (er.top < nr.top || er.bottom > nr.bottom) {
+                        n.scrollTop += er.top - nr.top - n.clientHeight / 3;
+                    }
+                }
+                n = n.parentElement;
+            }
+        }
+
         function scrollPreviewToFirstMark() {
-            if (!previewHighlightMarks.length) return;
-            const rect = previewHighlightMarks[0].getBoundingClientRect();
+            const firstRange = previewHighlightRanges[0];
+            const firstMark = previewHighlightMarks[0];
+            if (!firstRange && !firstMark) return;
+            const target = firstRange
+                ? (firstRange.startContainer.nodeType === 3 ? firstRange.startContainer.parentElement : firstRange.startContainer)
+                : firstMark;
+            if (target && target.parentElement) scrollNestedScrollersTo(target);
+            const rect = firstRange ? firstRange.getBoundingClientRect() : firstMark.getBoundingClientRect();
             const cRect = previewContent.getBoundingClientRect();
             if (rect.top < cRect.top || rect.bottom > cRect.bottom) {
                 previewContent.scrollTop += rect.top - cRect.top - previewContent.clientHeight / 3;
@@ -3560,7 +4027,7 @@
             const idx = fullText.indexOf(text);
             if (idx === -1) return false;
             markByIndex(nodes, idx, idx + text.length);
-            if (!previewHighlightMarks.length) return false;
+            if (!previewHighlightRanges.length && !previewHighlightMarks.length) return false;
             scrollPreviewToFirstMark();
             return true;
         }
@@ -3587,7 +4054,7 @@
             }
             if (idx === -1) return false;
             markByIndex(nodes, idx, idx + searchText.length);
-            if (!previewHighlightMarks.length) return false;
+            if (!previewHighlightRanges.length && !previewHighlightMarks.length) return false;
             scrollPreviewToFirstMark();
             return true;
         }
@@ -3627,10 +4094,10 @@
             const { nodes } = getPreviewTextNodes();
             if (!nodes.length) return false;
             markByIndex(nodes, idx, endIdx);
-            return previewHighlightMarks.length > 0;
+            return previewHighlightRanges.length > 0 || previewHighlightMarks.length > 0;
         }
 
-        // ── 预览→编辑器：用 window.getSelection + setSelectionRange ──
+        // ── 预览→编辑器：保留预览原生 Selection，编辑器只绘制视觉高亮 ──
         function buildMdStrippedMap(md) {
             let stripped = '', map = [], i = 0;
             while (i < md.length) {
@@ -3706,6 +4173,7 @@
             const blocks = findBlockForLine(ln);
             if (!blocks.length) return false;
             blocks.forEach(b => { b.classList.add('preview-sync-flash'); blockHighlightEls.push(b); });
+            scrollNestedScrollersTo(blocks[0]);
             const rect = blocks[0].getBoundingClientRect();
             const cRect = previewContent.getBoundingClientRect();
             if (rect.top < cRect.top || rect.bottom > cRect.bottom) {
@@ -3729,12 +4197,11 @@
             return chosen.ln;
         }
 
-        // 在编辑器中选中某行对应的内容块；preferText 非空时尝试在块内精确定位该文本
-        // doFocus=false 时不抢焦点，从而保留预览区的选区
-        function selectEditorForLine(ln, preferText, doFocus) {
+        // 计算某行对应的 Markdown 内容范围；preferText 非空时尝试在块内精确定位文本。
+        function editorRangeForLine(ln, preferText) {
             const value = editor.value;
             const lines = value.split('\n');
-            if (ln < 0 || ln >= lines.length) return;
+            if (ln < 0 || ln >= lines.length) return null;
             // 块范围：从 ln 到下一个锚点行（不含）
             let nextLn = lines.length;
             for (const a of syncAnchors) { if (a.ln > ln) { nextLn = a.ln; break; } }
@@ -3757,15 +4224,23 @@
                     if (idx !== -1) { start = blockStart + idx; end = start + c.length; break; }
                 }
             }
-            if (doFocus) editor.focus();
-            editor.setSelectionRange(start, end);
-            // 用镜像测量真实像素位置，计入软换行，确保跳转准确
-            const top = editorPixelTopOf(start);
+            return { start, end };
+        }
+
+        function highlightEditorForLine(ln, preferText) {
+            const range = editorRangeForLine(ln, preferText);
+            if (!range) return false;
+            editorVisualRange = range;
+            // 只滚动并绘制覆盖层，不 focus、不 setSelectionRange，避免抢走预览区真实选区。
+            const top = editorPixelTopOf(range.start);
             editor.scrollTop = Math.max(0, top - editor.clientHeight / 3);
+            requestAnimationFrame(renderEditorHighlight);
+            return true;
         }
 
         // ── 事件处理 ──
         function syncEditorToPreview() {
+            clearEditorHighlight();
             const s = editor.selectionStart, e = editor.selectionEnd;
             clearBlockHighlight();
             if (s === e) { clearPreviewHighlight(); return; }
@@ -3788,18 +4263,16 @@
             if (!sel || sel.isCollapsed) return;
             const text = sel.toString();
             if (!text.trim()) return;
-            // 克隆精确选区（聚焦编辑器会清掉原生选区，需提前保存边界）
             let range = null, viewportTop = null;
             try {
-                range = sel.getRangeAt(0).cloneRange();
+                range = sel.getRangeAt(0);
+                if (!preview.contains(range.commonAncestorContainer)) return;
                 viewportTop = range.getBoundingClientRect().top;
             } catch (e) {}
             // 用选区实际垂直位置定位源码行（与滚动同步一致，最稳健），再在块内按文本精确定位
             const ln = (viewportTop != null && viewportTop !== 0) ? previewYToLine(viewportTop) : null;
             if (ln == null) return;
-            selectEditorForLine(ln, text, true);   // 聚焦编辑器，使 markdown 选区高亮可见
-            // 聚焦会清掉预览区原生选区 → 按"精确选区"注入黄色 <mark> 反馈（文本重复时也不会跳到前面）
-            markRangeInPreview(range);
+            highlightEditorForLine(ln, text);
         }
 
         // 编辑器内清除预览高亮（仅作用于编辑器自身的键盘/点击，不会干扰预览区选择）
@@ -3811,6 +4284,9 @@
         }
 
         editor.addEventListener('mouseup', syncEditorToPreview);
+        editor.addEventListener('pointerdown', clearEditorHighlight);
+        editor.addEventListener('input', clearEditorHighlight);
+        editor.addEventListener('scroll', renderEditorHighlight);
         editor.addEventListener('keyup', function(e) {
             if (editor.selectionStart === editor.selectionEnd) {
                 clearOnCollapse();                       // 方向键/Home/End/Esc 等折叠选区 → 清高亮
@@ -3819,16 +4295,28 @@
             }
         });
         editor.addEventListener('click', clearOnCollapse);
+        preview.addEventListener('pointerdown', function() {
+            clearPreviewHighlight();
+            clearBlockHighlight();
+            clearEditorHighlight();
+        });
         preview.addEventListener('mouseup', syncPreviewToEditor);
-        // 点击预览区图像 → 在编辑器中选中其源码行（位置映射，与文本一致）
-        preview.addEventListener('click', function(e) {
+        // 单击预览区：图像 → 在编辑器中仅高亮其源码行（位置映射，与文本一致）；
+        // 空白处 → 清除选中高亮。挂在 previewContent 上，正文下方/周围的空白也能命中
+        previewContent.addEventListener('click', function(e) {
             const sel = window.getSelection();
             if (sel && !sel.isCollapsed) return;   // 有文本选区时交给 mouseup 处理
             const img = e.target.closest && e.target.closest('img');
-            if (!img) return;
-            const ln = previewYToLine(img.getBoundingClientRect().top);
-            if (ln != null) selectEditorForLine(ln, null, true);
+            if (img && preview.contains(img)) {
+                const ln = previewYToLine(img.getBoundingClientRect().top);
+                if (ln != null) highlightEditorForLine(ln, null);
+                return;
+            }
+            clearPreviewHighlight();
+            clearBlockHighlight();
+            clearEditorHighlight();
         });
+        window.addEventListener('resize', renderEditorHighlight);
     })();
 </script>
 

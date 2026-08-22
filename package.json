@@ -1,6 +1,6 @@
 {
   "name": "weiwuming-wechat-formatter",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "private": true,
   "description": "谓无名公众号排版 skill：Markdown 语法生成 + PicGo 图床上传 + 编辑器同源 HTML 渲染",
   "dependencies": {

@@ -108,6 +108,7 @@ These blocks should appear directly after the preceding content, without any int
 #### Selection & Listing Rules（列举规则）
 
 - **人物 `[universal:]` blocks**: pick only **substantive** persons — those the article discusses, quotes, or builds an argument on. Skip passing name-drops, and skip a person who is already represented by their own book's `[book:]` block in the same paragraph. **Target 3–6 person blocks per article** (fewer is fine for short articles); insert each at the paragraph of first mention only, never twice for the same person.
+- **图片语法选择**: 人物、电影/电视剧海报、广告使用 `[universal:]`（统一卡片尺寸）；史料照片、艺术作品、横幅或其他必须保留原始宽高比例的图片使用 `[origin:]`。不要用 Markdown `**` 包裹第一项文字，两种语法都会自动将第一项加粗。
 - **书籍 blocks**: every book the article substantively discusses gets one block at first mention — `[book:]` for Chinese editions, `[enbook:]` for English, `[jpbook:]` for Japanese. Never duplicate a book.
 - **延伸阅读**: recommend **2–5 books**, thematically tied to the article's subject. Must NOT repeat any book already in the article body. Prefer in-print Chinese editions (豆瓣 has an entry); order from most to least directly related.
 - In the final report, list what was chosen and why (one line each), so the user can veto or swap entries.
@@ -159,6 +160,7 @@ These blocks should appear directly after the preceding content, without any int
 - **Image field in syntax**: fill the returned public URL into the image/cover field:
   - `[book:<公网URL>|书名|作者|出版社|年份]`
   - `[universal:<公网URL>|姓名|身份/简介]`
+  - `[origin:<公网URL>|图说第一行|图说第二行|...]`
   - `[reading-book:书名|作者|译者|<公网URL>]`
   - If upload failed or no image was found, leave the field empty.
 - **Search timeout handling**: if a search takes too long, times out, or returns no results after reasonable attempts, leave the image URL field empty (no download needed) and report in `校对提醒`.
@@ -172,9 +174,10 @@ These blocks should appear directly after the preceding content, without any int
     - **Book name**: do NOT add 《》 or similar punctuation around the book name.
     - Example: `[book:http://.../weiwuming/a1b2c3d4.jpg|浮世通鉴：日本大众文化史|日文研项目组 编著，党蓓蓓 译|北京大学出版社|2025]`
     - Incorrect: `[book:xxx.jpg|《书名》|作者，出版社，年份]` (missing separators and extra punctuation)
-  - Movies/TV → `[universal:<URL>|片名|导演/主演/年份/简介]` — search **Douban** first for the poster.
+  - Movies/TV posters and advertisements → `[universal:<URL>|片名/广告名|导演/主演/年份/简介]` — search **Douban** first for movie/TV posters.
   - Events → `[universal:|事件名称|简要说明]`
-  - Photos → `[universal:<URL>|图说第一行|图说第二行]`
+  - Archival photos and artworks that must preserve their intrinsic proportions → `[origin:<URL>|图说第一行|图说第二行|...]`
+  - In both `[universal:]` and `[origin:]`, the first text field is automatically bold. Write plain text only; never add `**` around it.
 - **Extended reading format**: `[reading-book:书名|作者信息|译者信息|封面URL]` — fields MUST be separated by `|`; last field = uploaded cover URL (empty if unavailable).
   - **Each reading entry MUST be separated by a blank line.** No two `[reading-book:...]` lines should be adjacent without an empty line between them.
   - **译著 (translated works)**: author field = `[国家] 作者名 著` (e.g. `[美] 约翰·W·道尔 著`), translator field = `译者名 译` (e.g. `胡博 译`). Full example: `[reading-book:拥抱战败|[美] 约翰·W·道尔 著|胡博 译|http://.../weiwuming/xxxx.jpg]`
@@ -221,7 +224,7 @@ These blocks should appear directly after the preceding content, without any int
    - Notes: `---[notes]` ... `---[/notes]`; note entries are single lines in `^[N 内容]` format (Arabic N; the editor auto-converts to circled ①–㊿). Inline references are `^N` — never raw HTML `<sup>N</sup>`. Details and pitfalls in `references/syntax_rules.md` → Notes.
    - Source note: `---[note]` ... `---[/note]`. **No extra `---` line before this block.**
    - Bio: after `---[note]`, place `---[bio-title:作者简介]`, `[bio:原文]`, `---[/bio]`, followed by translator bio when present. **No extra `---` line before these blocks.**
-   - **Keyword blocks**: apply the Selection & Listing Rules above; search with the available web tools, download to `images/`, upload through the user's PicGo Server via `scripts/upload_image.py`, and insert `[book:<URL>|...]` / `[universal:<URL>|...]` blocks at first mention.
+   - **Keyword blocks**: apply the Selection & Listing Rules above; search with the available web tools, download to `images/`, upload through the user's PicGo Server via `scripts/upload_image.py`, and insert `[book:<URL>|...]`, `[universal:<URL>|...]`, or `[origin:<URL>|...]` blocks at first mention. The first text field of both image syntaxes is plain text and auto-bold.
    - **Extended reading**: 2–5 non-duplicate related books, `---[reading-title:延伸阅读]` ... `---[/reading]` above staff. **No extra `---` line before this block.**
    - Staff credit: `[staff:作者姓名|编辑]` + `[staff:春生、|审校]`.
    - Follow section: the fixed `---[follow]` ... `---[/follow]` footer is mandatory.
@@ -238,8 +241,10 @@ These blocks should appear directly after the preceding content, without any int
    ```bash
    node <SKILL_ROOT>/scripts/render_html.js <文章名>.md --preview
    ```
-   - Produces `<文章名>.html` (WeChat paste-ready, inline-styled — identical to the editor's 复制 output) and `<文章名>.preview.html` (open in a browser to visually verify).
-   - The renderer loads `编辑器最终版/index.html` and runs the editor's own pipeline — **never hand-write or post-edit the .html**; to change styles, change the editor file. Editor lookup order: `--editor` arg → env `WEIWUMING_EDITOR_HTML` → `~/.weiwuming/render.json` (`editor_html`) → `F:\py\编辑器最终版\index.html` → bundled `assets/editor-index.html` snapshot.
+   - Produces `<文章名>.html` (WeChat paste-ready, inline-styled — identical to the editor's 复制 output) and `<文章名>.preview.html` (browser QA page with a **复制排版结果** button).
+   - The renderer loads the web editor and runs its own `preprocessMarkdown → marked.parse → postprocessHtml → applyThemeToPreview → generateInlineStyledHtml` pipeline. **Never hand-write or post-edit the .html**; fix the markdown or editor and re-render.
+   - Editor lookup order: `--editor` arg → env `WEIWUMING_EDITOR_HTML` → `~/.weiwuming/render.json` (`editor_html`) → live `F:\py\tools.weiwuming.cn\index.html` → bundled `assets/editor-index.html` snapshot → legacy `F:\py\编辑器最终版\index.html`. The bundled root `index.html` plus `vendor/marked.min.js` is a directly openable copy of the same web editor.
+   - For WeChat, open `<文章名>.preview.html` and click **复制排版结果**; do not copy raw HTML source or rely on selecting part of the preview page. The button writes the exact generated `text/html` payload, with a selection-copy fallback for restricted `file://` clipboard environments.
    - **Exit code must be 0.** The renderer validates: the editor note is first, article modules are in strict order, all `<img>` are public http(s) URLs, every syntax block rendered, no unparsed syntax residue (e.g. `---[`, `<<<`), and `>>> ` has its space. If it exits 1, fix the .md and re-render — do not deliver a failing pair.
    - Re-render after ANY edit to the .md, so the two deliverables never diverge. Rendering is idempotent: same .md → byte-identical .html.
 
@@ -249,13 +254,14 @@ These blocks should appear directly after the preceding content, without any int
    - Every filled image field is a real public URL returned by the user's PicGo Server through `upload_image.py` (never a local path, never an invented URL); fields without a successful upload are empty.
    - All downloaded images exist in `images/` with correct naming.
    - Syntax markers are paired: `>>> `/`<<<`, `---[notes]`/`---[/notes]`, `---[note]`/`---[/note]`, `---[reading-title:]`/`---[/reading]`, `---[bio-title:]`/`---[/bio]`.
+   - `[universal:]` and `[origin:]` contain at least URL + first line + second line; their first text field contains no Markdown `**` because the editor auto-bolds it. Use `[origin:]` only when the intrinsic image proportions must be preserved.
    - **No extra `---` horizontal rule** before `---[note]`, `---[bio-title:]`, `---[reading-title:]`, `---[toc]`, or `---[notes]` blocks.
    - The article follows the exact structure order: 编者按 → 正文 → 目录(如有) → 注释(如有) → `---[note]` → 作者简介 → 译者简介(如有) → 延伸阅读 → 两条 staff → 固定关注区.
    - Every `##` heading is followed by `---[dot]`.
    - **Notes/footnote format checks**: (1) inline `^N` reference count == `^[N …]` entry count in `---[notes]`; (2) in the rendered HTML, `footnote-item` divs and `footnote-num` spans both equal that count, with no gaps in the circled-number sequence; (3) zero `<sup>` tags and zero bare `^数字` left in the HTML. If the source had footnotes, every marker must have its recovered entry — no "footnotes lost" report while `page_footnote` blocks still exist in the MinerU JSON.
    - **Punctuation normalization checks** (OCR sources): no half-width `, ; :` followed by a space inside Chinese sentences (should be `，；：`); no smart quotes U+201C/U+201D in Chinese context (unify to the article's `「」` style, keep English quotes in English citations); no unclosed `「` without `」`; no empty parentheses `（ ）` from OCR-dropped years/terms (restore only verifiable values, otherwise report in 校对提醒). When doing exact-string replacements, diagnose actual char codes first (`charCodeAt`) — curly vs straight quotes look identical in output.
    - Person blocks are substantive and unique (target 3–6; fewer is fine for short articles); reading list has 2–5 items and no duplicates with body books.
-   - Open `<文章名>.preview.html` or capture a browser screenshot. Check the opening, card covers, long poetry/table layouts, and footer; fix visible blank/broken cards or spacing errors and re-render.
+   - Open `<文章名>.preview.html` or capture a browser screenshot. Check the opening, `universal` fixed-size cards, `origin` intrinsic-proportion images, card covers, long poetry/table layouts, and footer; fix visible blank/broken cards or spacing errors and re-render. Use its copy button for the final WeChat paste test.
    - Suspected typos, grammar, punctuation, and political/compliance issues are listed separately, not silently corrected.
 
 ## Reporting Format

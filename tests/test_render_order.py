@@ -53,6 +53,46 @@ class RenderOrderTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("顺序错误", result.stderr)
 
+    def test_current_editor_image_syntax_and_preview_copy_are_preserved(self):
+        cards = (
+            "[universal:https://example.com/poster.jpg|海报标题|导演信息]\n\n"
+            "[origin:https://example.com/art.jpg|作品标题|作者信息|（某某博物馆藏）]\n\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "article.md"
+            source.write_text(
+                EDITOR_NOTE + BODY + cards + NOTE + AUTHOR + READING + FOOTER,
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [
+                    "node",
+                    str(RENDERER),
+                    str(source),
+                    "--editor",
+                    str(EDITOR),
+                    "--preview",
+                ],
+                encoding="utf-8",
+                errors="replace",
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+            rendered = source.with_suffix(".html").read_text(encoding="utf-8")
+            preview = source.with_name("article.preview.html").read_text(encoding="utf-8")
+
+            self.assertIn('>海报标题</strong>', rendered)
+            self.assertIn('>作品标题</strong>', rendered)
+            self.assertNotIn("**", rendered)
+            self.assertIn('class="person-photo origin-photo"', rendered)
+            self.assertIn('width: auto; height: auto; max-width: 100%', rendered)
+            self.assertIn('class="bracket-note"', rendered)
+            self.assertIn('color: #b2b2b2', rendered)
+            self.assertIn('id="copyBtn"', preview)
+            self.assertIn("ClipboardItem", preview)
+
 
 if __name__ == "__main__":
     unittest.main()
