@@ -55,7 +55,8 @@ class RenderOrderTests(unittest.TestCase):
 
     def test_current_editor_image_syntax_and_preview_copy_are_preserved(self):
         cards = (
-            "[universal:https://example.com/poster.jpg|海报标题|导演信息]\n\n"
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|编剧: 测试编剧|"
+            "上映：2026，片长：101 分钟]\n\n"
             "[origin:https://example.com/art.jpg|作品标题|作者信息|（某某博物馆藏）]\n\n"
         )
         with tempfile.TemporaryDirectory() as directory:
@@ -83,7 +84,7 @@ class RenderOrderTests(unittest.TestCase):
             rendered = source.with_suffix(".html").read_text(encoding="utf-8")
             preview = source.with_name("article.preview.html").read_text(encoding="utf-8")
 
-            self.assertIn('>海报标题</strong>', rendered)
+            self.assertIn('>《测试电影》</strong>', rendered)
             self.assertIn('>作品标题</strong>', rendered)
             self.assertNotIn("**", rendered)
             self.assertIn('class="person-photo origin-photo"', rendered)
@@ -92,6 +93,59 @@ class RenderOrderTests(unittest.TestCase):
             self.assertIn('color: #b2b2b2', rendered)
             self.assertIn('id="copyBtn"', preview)
             self.assertIn("ClipboardItem", preview)
+
+    def test_accepts_movie_director_writer_time_and_runtime(self):
+        card = (
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|编剧: 测试编剧|"
+            "上映：2026，片长：101 分钟]\n\n"
+        )
+        result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rejects_movie_card_without_runtime(self):
+        card = (
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|编剧: 测试编剧|"
+            "上映：2026]\n\n"
+        )
+        result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("片长", result.stderr)
+
+    def test_rejects_movie_synopsis_on_time_line(self):
+        card = (
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|编剧: 测试编剧|"
+            "上映：2026，片长：101 分钟；这是未换行的说明]\n\n"
+        )
+        result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("另起一行", result.stderr)
+
+    def test_rejects_movie_title_with_poster_suffix(self):
+        card = (
+            "[universal:https://example.com/poster.jpg|《测试电影》海报|导演: 测试导演|编剧: 测试编剧|"
+            "上映：2026，片长：101 分钟]\n\n"
+        )
+        result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("不要添加“海报”", result.stderr)
+
+    def test_rejects_movie_card_without_screenwriter(self):
+        card = (
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|主演: 测试演员|"
+            "上映：2026，片长：101 分钟]\n\n"
+        )
+        result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("编剧", result.stderr)
+
+    def test_rejects_combined_director_and_screenwriter_field(self):
+        card = (
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演，编剧：测试编剧|"
+            "上映：2026，片长：101 分钟]\n\n"
+        )
+        result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("两个独立字段", result.stderr)
 
 
 if __name__ == "__main__":

@@ -216,6 +216,42 @@ if (staffMarkers.length && structure.follow >= 0 && staffMarkers.at(-1).index >=
   problems.push('所有 [staff:] 必须位于关注引导 ---[follow] 之前');
 }
 
+// 电影/电视剧卡片：标题不加“海报”，导演与编剧各占一行，时间+片长同一行。
+const universalLines = normalizedMd.match(/^\[universal:[^\r\n]+\]\s*$/gm) || [];
+for (const line of universalLines) {
+  const fields = line.trim().slice('[universal:'.length, -1).split('|').map(field => field.trim());
+  const title = fields[1] || '';
+  const timeIndex = fields.findIndex(field => /^(上映|首播)：/.test(field));
+  const isMovieOrTv = title.includes('海报') || timeIndex >= 0;
+  if (!isMovieOrTv) continue;
+  if (title.includes('海报')) {
+    problems.push(`电影/电视剧卡片标题“${title}”只写作品名，不要添加“海报”二字`);
+  }
+  if (timeIndex < 0) {
+    problems.push(`电影/电视剧卡片“${title}”缺少“上映/首播 + 片长”时间行`);
+    continue;
+  }
+  const directorIndex = fields.findIndex(field => /^导演: \S/.test(field));
+  const writerIndex = fields.findIndex(field => /^编剧: \S/.test(field));
+  if (directorIndex < 0 || writerIndex < 0) {
+    problems.push(`电影/电视剧卡片“${title}”必须用两个独立字段依次填写“导演: 姓名”和“编剧: 姓名”，不要用主演/配音替代编剧`);
+  } else {
+    if (directorIndex !== 2 || writerIndex !== 3) {
+      problems.push(`电影/电视剧卡片“${title}”的导演和编剧必须紧接片名并各占一行：导演字段在前，编剧字段在后`);
+    }
+    if (/[、，]/.test(fields[directorIndex]) || /[、，]/.test(fields[writerIndex])) {
+      problems.push(`电影/电视剧卡片“${title}”的多位导演或编剧请用“/”分隔`);
+    }
+  }
+  const timeField = fields[timeIndex];
+  if (timeField.startsWith('上映：') && !/^上映：.+，片长：.+(?:分钟|小时)$/.test(timeField)) {
+    problems.push(`电影卡片“${title}”的时间行必须为“上映：年份，片长：时长”，说明请用后续 | 字段另起一行`);
+  }
+  if (timeField.startsWith('首播：') && !/^首播：.+，(?:单集)?片长：.+(?:分钟|小时|集)$/.test(timeField)) {
+    problems.push(`电视剧卡片“${title}”的时间行必须包含“首播”和“片长”，说明请用后续 | 字段另起一行`);
+  }
+}
+
 // 1. 所有 <img> 必须是 http(s) 公网地址（本地路径粘进公众号必裂图）。
 //    编辑器自带的 data:SVG 空封面占位图放行；空 src（图片字段留空）只警告。
 const warnings = [];

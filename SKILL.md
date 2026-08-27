@@ -107,7 +107,7 @@ These blocks should appear directly after the preceding content, without any int
 
 #### Selection & Listing Rules（列举规则）
 
-- **人物 `[universal:]` blocks**: pick only **substantive** persons — those the article discusses, quotes, or builds an argument on. Skip passing name-drops, and skip a person who is already represented by their own book's `[book:]` block in the same paragraph. **Target 3–6 person blocks per article** (fewer is fine for short articles); insert each at the paragraph of first mention only, never twice for the same person.
+- **人物 `[universal:]` blocks**: pick only **substantive** persons — those the article discusses, quotes, or builds an argument on. Skip passing name-drops, and skip a person who is already represented by their own book's `[book:]` block in the same paragraph. **Target 3–6 person blocks per article** (fewer is fine for short articles); insert each at the paragraph of first mention only, never twice for the same person. The first text field must be `姓名（生年–卒年）`; for living persons use `姓名（生年–）`. The second field contains identity and contribution only, without repeating the dates.
 - **图片语法选择**: 人物、电影/电视剧海报、广告使用 `[universal:]`（统一卡片尺寸）；史料照片、艺术作品、横幅或其他必须保留原始宽高比例的图片使用 `[origin:]`。不要用 Markdown `**` 包裹第一项文字，两种语法都会自动将第一项加粗。
 - **书籍 blocks**: every book the article substantively discusses gets one block at first mention — `[book:]` for Chinese editions, `[enbook:]` for English, `[jpbook:]` for Japanese. Never duplicate a book.
 - **延伸阅读**: recommend **2–5 books**, thematically tied to the article's subject. Must NOT repeat any book already in the article body. Prefer in-print Chinese editions (豆瓣 has an entry); order from most to least directly related.
@@ -120,7 +120,7 @@ These blocks should appear directly after the preceding content, without any int
   2. **Kotobank (kotobank.jp)** — authoritative for Japanese scholars/writers not well covered by Wikipedia.
   3. **机构页面** — university faculty pages, publisher author pages (最权威的在职头衔来源).
   4. **百度百科 / 豆瓣作者页** — fallback for Chinese figures; treat as secondary, verify against one of the above.
-  - The 简介 field format: `身份头衔，代表作或主要贡献` — factual, ≤ 40 chars, no honorifics. **Birth/death years and titles must be confirmed by at least one authoritative source**; if sources conflict, pick the more authoritative one and note the conflict in `校对提醒`.
+  - The name field format is `姓名（生年–卒年）`; use `姓名（生年–）` for a living person. The 简介 field format is `身份头衔，代表作或主要贡献` — factual, ≤ 40 chars, no honorifics, and no repeated dates. **Birth/death years and titles must be confirmed by at least one authoritative source**; if sources conflict, pick the more authoritative one and note the conflict in `校对提醒`. Never invent a missing year.
 - **人物照片**:
   1. **Wikimedia Commons** (`https://upload.wikimedia.org/wikipedia/commons/...`) — check the person's Wikipedia infobox image first.
   2. **Kotobank / 机构页 / publisher author page** portrait.
@@ -168,13 +168,19 @@ These blocks should appear directly after the preceding content, without any int
 #### Block Syntax Details
 
 - Insert the appropriate syntax block **immediately after the paragraph where the keyword is first mentioned**:
-  - Persons → `[universal:<URL>|姓名|身份/简介]`
+  - Persons → `[universal:<URL>|姓名（生年–卒年）|身份/简介]`；在世人物使用 `姓名（生年–）`，简介字段不再重复年份。
   - Books → `[book:<URL>|书名|作者|出版社|年份]` / `[enbook:<URL>|Title|Author|Publisher|Year]` / `[jpbook:<URL>|書名|著者|出版社|年]`
     - **Field separator rule**: each field MUST be separated by `|`, do NOT use `、` or other delimiters within fields.
     - **Book name**: do NOT add 《》 or similar punctuation around the book name.
     - Example: `[book:http://.../weiwuming/a1b2c3d4.jpg|浮世通鉴：日本大众文化史|日文研项目组 编著，党蓓蓓 译|北京大学出版社|2025]`
     - Incorrect: `[book:xxx.jpg|《书名》|作者，出版社，年份]` (missing separators and extra punctuation)
-  - Movies/TV posters and advertisements → `[universal:<URL>|片名/广告名|导演/主演/年份/简介]` — search **Douban** first for movie/TV posters.
+  - Movies/TV posters and advertisements → `[universal:<URL>|《片名》|导演: 姓名|编剧: 姓名|上映：年份，片长：分钟]` — search **Douban** first for movie/TV posters.
+    - **标题行**: write only the work title (normally `《片名》`); do not append `海报`.
+    - **主创信息**: director and screenwriter MUST be two consecutive, separate fields, rendered on separate lines: `导演: ...|编剧: ...`. Use a half-width colon followed by one space. Join multiple names with `/`; retain `等` when the source or verified credit is intentionally non-exhaustive. Do not substitute cast/voice actors for the screenwriter. If the director also wrote the screenplay, repeat the name in both roles.
+    - **电影时间行**: `上映` and `片长` MUST share one field so they render on the same line: `上映：YYYY，片长：NN 分钟`.
+    - **电视剧时间行**: use `首播：YYYY，单集片长：NN 分钟，共 NN 集` (omit the episode count only when it cannot be verified).
+    - **默认不写简介**: unless the user explicitly requests a synopsis or contextual note, end the card after the time line. When explicitly requested, add it as a following `|`-separated field (normally `说明：...`); never append it to the `上映/首播 + 片长` field.
+    - Example: `[universal:https://.../poster.jpg|《新世纪福音战士》|导演: 庵野秀明/鹤卷和哉等|编剧: 庵野秀明/榎户洋司等|首播：1995.10.4，单集片长：24 分钟，共 26 集]`
   - Events → `[universal:|事件名称|简要说明]`
   - Archival photos and artworks that must preserve their intrinsic proportions → `[origin:<URL>|图说第一行|图说第二行|...]`
   - In both `[universal:]` and `[origin:]`, the first text field is automatically bold. Write plain text only; never add `**` around it.
@@ -255,6 +261,8 @@ These blocks should appear directly after the preceding content, without any int
    - All downloaded images exist in `images/` with correct naming.
    - Syntax markers are paired: `>>> `/`<<<`, `---[notes]`/`---[/notes]`, `---[note]`/`---[/note]`, `---[reading-title:]`/`---[/reading]`, `---[bio-title:]`/`---[/bio]`.
    - `[universal:]` and `[origin:]` contain at least URL + first line + second line; their first text field contains no Markdown `**` because the editor auto-bolds it. Use `[origin:]` only when the intrinsic image proportions must be preserved.
+   - Every person `[universal:]` card puts verified birth/death years immediately after the name; the description does not repeat them.
+   - Every movie/TV `[universal:]` card uses the bare work title (no `海报` suffix), lists both director and screenwriter on the second rendered line, and has a dedicated time field containing both release/premiere time and runtime. It omits synopsis/context by default; explicitly requested notes use a later `|` field.
    - **No extra `---` horizontal rule** before `---[note]`, `---[bio-title:]`, `---[reading-title:]`, `---[toc]`, or `---[notes]` blocks.
    - The article follows the exact structure order: 编者按 → 正文 → 目录(如有) → 注释(如有) → `---[note]` → 作者简介 → 译者简介(如有) → 延伸阅读 → 两条 staff → 固定关注区.
    - Every `##` heading is followed by `---[dot]`.

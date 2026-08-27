@@ -144,10 +144,10 @@ Rules:
 ### Persons
 
 ```markdown
-[universal:图片URL|姓名|身份/简介]
+[universal:图片URL|姓名（生年–卒年）|身份/简介]
 ```
 
-The first text field (`姓名`) is automatically bold. Write it as plain text; do not add Markdown `**`.
+The first text field is automatically bold. Put verified birth/death years immediately after the name: `姓名（生年–卒年）`; for living persons use `姓名（生年–）`. Keep dates out of the second field, which contains identity and contribution only. Never invent a missing year, and do not add Markdown `**`.
 
 ### Books
 
@@ -181,14 +181,21 @@ Use `[origin:]` for archival photos, artworks, horizontal images, or any image w
 **If a `[universal:...]` block contains a title that is a movie or TV show, use `douban-mcp` `search-movie` to look up its details and fill in the fields.**
 
 ```markdown
-[universal:封面URL|片名|导演/主演/年份/简介]
+[universal:封面URL|《片名》|导演: 导演名|编剧: 编剧名|上映：YYYY，片长：NN 分钟]
 ```
 
 Movie/TV posters and advertisements stay on `[universal:]`, which uses the standard card image size. The title field is automatically bold.
 
 Rules:
 - Use `douban-mcp` `search-movie` with the title as keyword (`q`).
-- Fill in: cover image URL, title, director/cast, year, and a one-line synopsis.
+- Fill in: cover image URL, title, director, screenwriter, release year, and runtime.
+- The title field contains only the work title (normally `《片名》`); do not append `海报`.
+- Put director and screenwriter in two consecutive, separate fields so they render on separate lines: `导演: ...|编剧: ...`. Use a half-width colon followed by one space. Join multiple names with `/`; retain `等` when the source or verified credit is intentionally non-exhaustive. Do not replace the screenwriter with cast or voice actors. If one person holds both roles, name that person in both roles.
+- For movies, the release year and runtime MUST occupy one field: `上映：YYYY，片长：NN 分钟`.
+- For TV shows, use one field: `首播：YYYY，单集片长：NN 分钟，共 NN 集`; omit the episode count only when it cannot be verified.
+- Omit synopsis, historical context, and editorial explanation by default. Only when the user explicitly requests such information, put it in a later `|`-separated field, normally `说明：...`; never append it to the release/runtime field.
+- Correct: `[universal:https://.../poster.jpg|《新世纪福音战士》|导演: 庵野秀明/鹤卷和哉等|编剧: 庵野秀明/榎户洋司等|首播：1995.10.4，单集片长：24 分钟，共 26 集]`
+- Incorrect: `[universal:https://.../poster.jpg|《东京物语》海报|导演：小津安二郎，编剧：野田高梧、小津安二郎|上映：1953，片长：135 分钟|简介：家庭剧]`
 - If the search result is a TV series rather than a movie, still use `search-movie` (it covers both); optionally also call `list-tv-reviews` for additional context.
 - If no cover URL is found, leave it empty.
 
@@ -270,4 +277,6 @@ Before delivery, check:
 - **Extended reading section** is present above staff entries with relevant book recommendations.
 - **Keyword blocks** are inserted after relevant paragraphs for key persons, books, events, and photos.
 - `[universal:]` is used for standard cards/posters/ads; `[origin:]` is used for photos/artworks that must preserve intrinsic proportions; neither syntax contains `**` in its first text field.
+- Every person card puts verified birth/death years immediately after the name and does not repeat them in the description.
+- Every movie/TV poster card uses the bare work title without `海报`, puts `导演: ...` and `编剧: ...` in separate consecutive fields/lines (multiple names joined with `/`), keeps `上映/首播` and `片长` on one line, and omits synopsis/context unless explicitly requested.
 - Typos, grammar, punctuation, and political/compliance issues are reported separately under `校对提醒`.
