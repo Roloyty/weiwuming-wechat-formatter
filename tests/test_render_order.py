@@ -55,7 +55,7 @@ class RenderOrderTests(unittest.TestCase):
 
     def test_current_editor_image_syntax_and_preview_copy_are_preserved(self):
         cards = (
-            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|编剧: 测试编剧|"
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演，编剧：测试编剧|"
             "上映：2026，片长：101 分钟]\n\n"
             "[origin:https://example.com/art.jpg|作品标题|作者信息|（某某博物馆藏）]\n\n"
         )
@@ -96,7 +96,7 @@ class RenderOrderTests(unittest.TestCase):
 
     def test_accepts_movie_director_writer_time_and_runtime(self):
         card = (
-            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|编剧: 测试编剧|"
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演，编剧：测试编剧|"
             "上映：2026，片长：101 分钟]\n\n"
         )
         result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
@@ -104,7 +104,7 @@ class RenderOrderTests(unittest.TestCase):
 
     def test_rejects_movie_card_without_runtime(self):
         card = (
-            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|编剧: 测试编剧|"
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演，编剧：测试编剧|"
             "上映：2026]\n\n"
         )
         result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
@@ -113,7 +113,7 @@ class RenderOrderTests(unittest.TestCase):
 
     def test_rejects_movie_synopsis_on_time_line(self):
         card = (
-            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|编剧: 测试编剧|"
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演，编剧：测试编剧|"
             "上映：2026，片长：101 分钟；这是未换行的说明]\n\n"
         )
         result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
@@ -122,7 +122,7 @@ class RenderOrderTests(unittest.TestCase):
 
     def test_rejects_movie_title_with_poster_suffix(self):
         card = (
-            "[universal:https://example.com/poster.jpg|《测试电影》海报|导演: 测试导演|编剧: 测试编剧|"
+            "[universal:https://example.com/poster.jpg|《测试电影》海报|导演：测试导演，编剧：测试编剧|"
             "上映：2026，片长：101 分钟]\n\n"
         )
         result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
@@ -131,21 +131,21 @@ class RenderOrderTests(unittest.TestCase):
 
     def test_rejects_movie_card_without_screenwriter(self):
         card = (
-            "[universal:https://example.com/poster.jpg|《测试电影》|导演: 测试导演|主演: 测试演员|"
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演，主演：测试演员|"
             "上映：2026，片长：101 分钟]\n\n"
         )
         result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
         self.assertEqual(result.returncode, 1)
         self.assertIn("编剧", result.stderr)
 
-    def test_rejects_combined_director_and_screenwriter_field(self):
+    def test_rejects_director_and_screenwriter_on_separate_lines(self):
         card = (
-            "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演，编剧：测试编剧|"
+            "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演|编剧：测试编剧|"
             "上映：2026，片长：101 分钟]\n\n"
         )
         result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
         self.assertEqual(result.returncode, 1)
-        self.assertIn("两个独立字段", result.stderr)
+        self.assertIn("同一行", result.stderr)
 
 
 if __name__ == "__main__":

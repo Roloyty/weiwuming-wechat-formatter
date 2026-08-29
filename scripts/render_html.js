@@ -216,7 +216,7 @@ if (staffMarkers.length && structure.follow >= 0 && staffMarkers.at(-1).index >=
   problems.push('所有 [staff:] 必须位于关注引导 ---[follow] 之前');
 }
 
-// 电影/电视剧卡片：标题不加“海报”，导演与编剧各占一行，时间+片长同一行。
+// 电影/电视剧卡片：标题不加“海报”，导演+编剧同一行，时间+片长同一行。
 const universalLines = normalizedMd.match(/^\[universal:[^\r\n]+\]\s*$/gm) || [];
 for (const line of universalLines) {
   const fields = line.trim().slice('[universal:'.length, -1).split('|').map(field => field.trim());
@@ -231,17 +231,12 @@ for (const line of universalLines) {
     problems.push(`电影/电视剧卡片“${title}”缺少“上映/首播 + 片长”时间行`);
     continue;
   }
-  const directorIndex = fields.findIndex(field => /^导演: \S/.test(field));
-  const writerIndex = fields.findIndex(field => /^编剧: \S/.test(field));
-  if (directorIndex < 0 || writerIndex < 0) {
-    problems.push(`电影/电视剧卡片“${title}”必须用两个独立字段依次填写“导演: 姓名”和“编剧: 姓名”，不要用主演/配音替代编剧`);
-  } else {
-    if (directorIndex !== 2 || writerIndex !== 3) {
-      problems.push(`电影/电视剧卡片“${title}”的导演和编剧必须紧接片名并各占一行：导演字段在前，编剧字段在后`);
-    }
-    if (/[、，]/.test(fields[directorIndex]) || /[、，]/.test(fields[writerIndex])) {
-      problems.push(`电影/电视剧卡片“${title}”的多位导演或编剧请用“/”分隔`);
-    }
+  const creditsField = fields[2] || '';
+  const creditsMatch = creditsField.match(/^导演：(.+)，编剧：(.+)$/);
+  if (!creditsMatch) {
+    problems.push(`电影/电视剧卡片“${title}”必须在同一字段填写“导演：姓名，编剧：姓名”，使导演和编剧显示在同一行；不要用主演/配音替代编剧`);
+  } else if (/[、，]/.test(creditsMatch[1]) || /[、，]/.test(creditsMatch[2])) {
+    problems.push(`电影/电视剧卡片“${title}”的多位导演或编剧请用“/”分隔`);
   }
   const timeField = fields[timeIndex];
   if (timeField.startsWith('上映：') && !/^上映：.+，片长：.+(?:分钟|小时)$/.test(timeField)) {

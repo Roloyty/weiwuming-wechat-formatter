@@ -174,13 +174,13 @@ These blocks should appear directly after the preceding content, without any int
     - **Book name**: do NOT add 《》 or similar punctuation around the book name.
     - Example: `[book:http://.../weiwuming/a1b2c3d4.jpg|浮世通鉴：日本大众文化史|日文研项目组 编著，党蓓蓓 译|北京大学出版社|2025]`
     - Incorrect: `[book:xxx.jpg|《书名》|作者，出版社，年份]` (missing separators and extra punctuation)
-  - Movies/TV posters and advertisements → `[universal:<URL>|《片名》|导演: 姓名|编剧: 姓名|上映：年份，片长：分钟]` — search **Douban** first for movie/TV posters.
+  - Movies/TV posters and advertisements → `[universal:<URL>|《片名》|导演：姓名，编剧：姓名|上映：年份，片长：分钟]` — search **Douban** first for movie/TV posters.
     - **标题行**: write only the work title (normally `《片名》`); do not append `海报`.
-    - **主创信息**: director and screenwriter MUST be two consecutive, separate fields, rendered on separate lines: `导演: ...|编剧: ...`. Use a half-width colon followed by one space. Join multiple names with `/`; retain `等` when the source or verified credit is intentionally non-exhaustive. Do not substitute cast/voice actors for the screenwriter. If the director also wrote the screenplay, repeat the name in both roles.
+    - **主创行**: director and screenwriter MUST share one field and render on the same line: `导演：...，编剧：...`. Use full-width colons and a Chinese comma exactly as shown. Join multiple names within either role with `/`; retain `等` when the source or verified credit is intentionally non-exhaustive. Do not substitute cast/voice actors for the screenwriter. If the director also wrote the screenplay, repeat the name in both roles.
     - **电影时间行**: `上映` and `片长` MUST share one field so they render on the same line: `上映：YYYY，片长：NN 分钟`.
     - **电视剧时间行**: use `首播：YYYY，单集片长：NN 分钟，共 NN 集` (omit the episode count only when it cannot be verified).
     - **默认不写简介**: unless the user explicitly requests a synopsis or contextual note, end the card after the time line. When explicitly requested, add it as a following `|`-separated field (normally `说明：...`); never append it to the `上映/首播 + 片长` field.
-    - Example: `[universal:https://.../poster.jpg|《新世纪福音战士》|导演: 庵野秀明/鹤卷和哉等|编剧: 庵野秀明/榎户洋司等|首播：1995.10.4，单集片长：24 分钟，共 26 集]`
+    - Example: `[universal:https://.../poster.jpg|《新世纪福音战士》|导演：庵野秀明/鹤卷和哉等，编剧：庵野秀明/榎户洋司等|首播：1995.10.4，单集片长：24 分钟，共 26 集]`
   - Events → `[universal:|事件名称|简要说明]`
   - Archival photos and artworks that must preserve their intrinsic proportions → `[origin:<URL>|图说第一行|图说第二行|...]`
   - In both `[universal:]` and `[origin:]`, the first text field is automatically bold. Write plain text only; never add `**` around it.
