@@ -144,10 +144,10 @@ Rules:
 ### Persons
 
 ```markdown
-[universal:图片URL|姓名（生年–卒年）|身份/简介]
+[universal:图片URL|姓名（生年~卒年）|身份/简介]
 ```
 
-The first text field is automatically bold. Put verified birth/death years immediately after the name: `姓名（生年–卒年）`; for living persons use `姓名（生年–）`. Keep dates out of the second field, which contains identity and contribution only. Never invent a missing year, and do not add Markdown `**`.
+The first text field is automatically bold. Put verified birth/death years immediately after the name: `姓名（生年~卒年）`; for living persons use `姓名（生年~）`. **The year separator is the tilde `~`** — never a hyphen or dash (`-`, `–`, `—`). Keep dates out of the second field, which contains identity and contribution only. Never invent a missing year, and do not add Markdown `**`.
 
 ### Books
 
