@@ -135,7 +135,34 @@ Rules:
 - If `封面URL` is missing, leave it empty. The editor will show a blank book-cover placeholder. Do not invent a URL.
 - Book recommendations must be factually accurate and relevant to the article's subject matter.
 - Use web search to find correct titles, authors, publishers, and years.
-- **Format Rule**: Each field MUST be separated by `|` (pipe character). Do NOT use `、` or other delimiters within fields. Example: `[reading-book:日本现代文学的起源|柄谷行人|赵京华|https://xxx.jpg]`
+- **Format Rule**: Each field MUST be separated by `|` (pipe character). Never use `、`、`，` or any other character **in place of** `|` to separate fields. (`、` is still allowed *inside* the translator field to join multiple translators — see below.)
+- **Each reading entry MUST be separated by a blank line.**
+
+### 作者字段与译者字段
+
+`[reading-book:]` 的第二字段是作者、第三字段是译者。两者格式如下：
+
+- **作者字段只写姓名，不写"著"**。`著` 是默认情形，一律省略。多位作者用半角 `/` 分隔，不用 `、` 或 `，`。
+- **编著加"编"**：编者、编著、主编的书，在姓名后空一格补 `编`。这是唯一保留的著作方式标记。
+- **国籍前缀只给中文译本**：以 `[国籍]` 开头，方括号与姓名之间**不留空格**。**中国作者不写国籍**；非译本也不写。
+- **译者字段**：`译者名 译`，姓名与 `译` 之间空一格；多位译者用 `、` 分隔。非译本留空。
+
+```markdown
+[reading-book:中国人留学日本史|[日]实藤惠秀|谭汝谦、林启彦 译|https://xxx.jpg]
+[reading-book:日本现代文学的起源|[日]柄谷行人|赵京华 译|https://xxx.jpg]
+[reading-book:浮世通鉴：日本大众文化史|[日]日文研项目组 编|党蓓蓓 译|https://xxx.jpg]
+[reading-book:韩国现代政治史|咸在凤||]
+```
+
+错误写法：`|[日] 实藤惠秀 著|`（方括号后多空格、多"著"）、`|柄谷行人、莲实重彦|`（多作者应用 `/`）、`|赵京华|`（漏"译"）。
+
+### 语法选择
+
+- 有在版中译本 → `[reading-book:书名|作者|译者|封面URL]`
+- 只有日文原版 → `[reading-jpbook:書名|著者|出版社|封面URL]`
+- 只有英文原版 → `[reading-enbook:Title|Author|Publisher|封面URL]`
+
+`jpbook` / `enbook` 的第三字段是**出版社**而非译者，所以国籍前缀与译者规则对它们不适用，作者字段直接写姓名（多人同样用 `/`）。
 
 ## Keyword Blocks
 

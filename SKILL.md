@@ -186,8 +186,16 @@ These blocks should appear directly after the preceding content, without any int
   - In both `[universal:]` and `[origin:]`, the first text field is automatically bold. Write plain text only; never add `**` around it.
 - **Extended reading format**: `[reading-book:书名|作者信息|译者信息|封面URL]` — fields MUST be separated by `|`; last field = uploaded cover URL (empty if unavailable).
   - **Each reading entry MUST be separated by a blank line.** No two `[reading-book:...]` lines should be adjacent without an empty line between them.
-  - **译著 (translated works)**: author field = `[国家] 作者名 著` (e.g. `[美] 约翰·W·道尔 著`), translator field = `译者名 译` (e.g. `胡博 译`). Full example: `[reading-book:拥抱战败|[美] 约翰·W·道尔 著|胡博 译|http://.../weiwuming/xxxx.jpg]`
-  - **原著 (original works)**: author field = `作者名`, translator field empty. Full example: `[reading-book:韩国现代政治史|咸在凤||]`
+  - **作者字段 — 只写姓名，不写"著"**。`著` 是默认情形，一律省略。多位作者用半角 `/` 分隔，不用 `、` 或 `，`：`[美]彼得·海斯勒/何伟`。
+  - **编著加"编"**：编者、编著、主编的书，在姓名后空一格补 `编`，例如 `[日]日文研项目组 编`、`钱理群 编`。这是唯一保留的著作方式标记。
+  - **国籍前缀只给中文译本**：中文译本的作者字段以 `[国籍]` 开头，方括号与姓名之间**不留空格** —— `[日]实藤惠秀`、`[美]约翰·W·道尔`。**中国作者不写国籍**。非译本（日文原著、英文原著等）也不写国籍，直接写姓名。
+  - **译者字段**：`译者名 译`，姓名与 `译` 之间空一格。多位译者用 `、` 分隔：`谭汝谦、林启彦 译`。非译本此字段留空。
+  - 完整示例：
+    - 中文译本 → `[reading-book:中国人留学日本史|[日]实藤惠秀|谭汝谦、林启彦 译|http://.../weiwuming/xxxx.jpg]`
+    - 中文原著 → `[reading-book:韩国现代政治史|咸在凤||]`
+    - 中文编著 → `[reading-book:浮世通鉴：日本大众文化史|[日]日文研项目组 编|党蓓蓓 译|http://.../weiwuming/xxxx.jpg]`
+    - 日文原著 → `[reading-jpbook:日本映画は信頼できるか|四方田犬彦|現代思潮新社|]`（第三字段是出版社，不是译者）
+  - **选用哪个语法**：有在版中译本用 `[reading-book:]`；只有日文原版用 `[reading-jpbook:]`；只有英文原版用 `[reading-enbook:]`。`jpbook`/`enbook` 的第三字段是出版社，因此国籍前缀与译者规则对它们不适用。
 - All searched data must be factual. If uncertain, report in `校对提醒`.
 
 ### Staff and Fixed Footer
@@ -269,6 +277,7 @@ These blocks should appear directly after the preceding content, without any int
    - **Notes/footnote format checks**: (1) inline `^N` reference count == `^[N …]` entry count in `---[notes]`; (2) in the rendered HTML, `footnote-item` divs and `footnote-num` spans both equal that count, with no gaps in the circled-number sequence; (3) zero `<sup>` tags and zero bare `^数字` left in the HTML. If the source had footnotes, every marker must have its recovered entry — no "footnotes lost" report while `page_footnote` blocks still exist in the MinerU JSON.
    - **Punctuation normalization checks** (OCR sources): no half-width `, ; :` followed by a space inside Chinese sentences (should be `，；：`); no smart quotes U+201C/U+201D in Chinese context (unify to the article's `「」` style, keep English quotes in English citations); no unclosed `「` without `」`; no empty parentheses `（ ）` from OCR-dropped years/terms (restore only verifiable values, otherwise report in 校对提醒). When doing exact-string replacements, diagnose actual char codes first (`charCodeAt`) — curly vs straight quotes look identical in output.
    - Person blocks are substantive and unique (target 3–6; fewer is fine for short articles); reading list has 2–5 items and no duplicates with body books.
+   - **延伸阅读作者/译者字段格式**：作者字段无 `著`；`[国籍]` 与姓名之间无空格；中国作者与非译本无国籍前缀；多作者用 `/` 而非 `、`；编著保留 `编`；译者字段形如 `姓名 译`（多人用 `、` 分隔），非译本留空。
    - Open `<文章名>.preview.html` or capture a browser screenshot. Check the opening, `universal` fixed-size cards, `origin` intrinsic-proportion images, card covers, long poetry/table layouts, and footer; fix visible blank/broken cards or spacing errors and re-render. Use its copy button for the final WeChat paste test.
    - Suspected typos, grammar, punctuation, and political/compliance issues are listed separately, not silently corrected.
 
