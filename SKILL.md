@@ -186,8 +186,22 @@ These blocks should appear directly after the preceding content, without any int
   - In both `[universal:]` and `[origin:]`, the first text field is automatically bold. Write plain text only; never add `**` around it.
 - **Extended reading format**: `[reading-book:书名|作者信息|译者信息|封面URL]` — fields MUST be separated by `|`; last field = uploaded cover URL (empty if unavailable).
   - **Each reading entry MUST be separated by a blank line.** No two `[reading-book:...]` lines should be adjacent without an empty line between them.
-  - **译著 (translated works)**: author field = `[国家] 作者名 著` (e.g. `[美] 约翰·W·道尔 著`), translator field = `译者名 译` (e.g. `胡博 译`). Full example: `[reading-book:拥抱战败|[美] 约翰·W·道尔 著|胡博 译|http://.../weiwuming/xxxx.jpg]`
-  - **原著 (original works)**: author field = `作者名`, translator field empty. Full example: `[reading-book:韩国现代政治史|咸在凤||]`
+  - **作者字段 — 只写姓名，不写"著"**。`著` 是默认情形，一律省略。多位作者用半角 `/` 分隔，不用 `、` 或 `，`：`[美]彼得·海斯勒/何伟`。
+  - **编著加"编"**：编者、编著、主编的书，在姓名后空一格补 `编`，例如 `[日]日文研项目组 编`、`钱理群 编`。这是唯一保留的著作方式标记。
+  - **国籍前缀只出现在译本上**，标注跨语言关系，方括号与姓名之间**不留空格**。引用**原版**（未经翻译）时作者不加国籍。译本情形下作者与译者**各按本人国籍**标注，**中国人一律省略**：
+    - 中译本 → 作者 `[日]实藤惠秀`；译者是中国人，省略国籍，写 `谭汝谦、林启彦 译`
+    - 外译外（非中译本）→ 作者与译者都不是中国人，两边都标：作者 `[英]Barak Kushner`，译者 `[日]井形彬 译`
+    - 原版 → `四方田犬彦`，不加国籍
+  - **译者字段**：`译者名 译`，姓名与 `译` 之间空一格。多位译者用 `、` 分隔：`谭汝谦、林启彦 译`。非中国籍译者按上条加 `[国籍]` 前缀。引用原版时此字段留空。
+  - **人名写法**：中译本用中译本署名的中文译名（`[美]约翰·W·道尔`、`[日]实藤惠秀`）；其余情形（外译外、原版）**一律用本人原名**，不用所引版本的音译或转写 —— 上例日译本封面署名是片假名「バラク・クシュナー」，条目仍写 `[英]Barak Kushner`。
+  - 完整示例：
+    - 中文译本 → `[reading-book:中国人留学日本史|[日]实藤惠秀|谭汝谦、林启彦 译|http://.../weiwuming/xxxx.jpg]`
+    - 中文原著 → `[reading-book:韩国现代政治史|咸在凤||]`
+    - 中文编著 → `[reading-book:浮世通鉴：日本大众文化史|[日]日文研项目组 编|党蓓蓓 译|http://.../weiwuming/xxxx.jpg]`
+    - 外译外（英文书的日译本）→ `[reading-book:思想戦：大日本帝国のプロパガンダ|[英]Barak Kushner|[日]井形彬 译|http://.../weiwuming/xxxx.jpg]`
+    - 外文原版（无中译本）→ `[reading-book:日本映画は信頼できるか|四方田犬彦||]`
+  - **延伸阅读不写出版社**：一律使用 `[reading-book:书名|作者|译者|封面URL]`。`[reading-jpbook:]` / `[reading-enbook:]` 的第三字段是出版社，与本栏体例不符，**不要在延伸阅读中使用**（它们保留给正文内联书目）。
+  - **未有中译本的外文书**：书名保留原文（日文写日文、英文写英文），译者字段留空。引用**原版**时作者不加 `[国籍]`，例：`[reading-book:日本映画は信頼できるか|四方田犬彦||]`；引用它在第三国的**译本**时按上条为作者与译者两侧都标注国籍。
 - All searched data must be factual. If uncertain, report in `校对提醒`.
 
 ### Staff and Fixed Footer
@@ -269,6 +283,7 @@ These blocks should appear directly after the preceding content, without any int
    - **Notes/footnote format checks**: (1) inline `^N` reference count == `^[N …]` entry count in `---[notes]`; (2) in the rendered HTML, `footnote-item` divs and `footnote-num` spans both equal that count, with no gaps in the circled-number sequence; (3) zero `<sup>` tags and zero bare `^数字` left in the HTML. If the source had footnotes, every marker must have its recovered entry — no "footnotes lost" report while `page_footnote` blocks still exist in the MinerU JSON.
    - **Punctuation normalization checks** (OCR sources): no half-width `, ; :` followed by a space inside Chinese sentences (should be `，；：`); no smart quotes U+201C/U+201D in Chinese context (unify to the article's `「」` style, keep English quotes in English citations); no unclosed `「` without `」`; no empty parentheses `（ ）` from OCR-dropped years/terms (restore only verifiable values, otherwise report in 校对提醒). When doing exact-string replacements, diagnose actual char codes first (`charCodeAt`) — curly vs straight quotes look identical in output.
    - Person blocks are substantive and unique (target 3–6; fewer is fine for short articles); reading list has 2–5 items and no duplicates with body books.
+   - **延伸阅读作者/译者字段格式**：作者字段无 `著`；`[国籍]` 与姓名之间无空格；引用原版与中国籍人士无国籍前缀，外译外的作者与译者两侧都有；多作者用 `/` 而非 `、`；编著保留 `编`；译者字段形如 `姓名 译`（多人用 `、` 分隔），引用原版时留空。
    - Open `<文章名>.preview.html` or capture a browser screenshot. Check the opening, `universal` fixed-size cards, `origin` intrinsic-proportion images, card covers, long poetry/table layouts, and footer; fix visible blank/broken cards or spacing errors and re-render. Use its copy button for the final WeChat paste test.
    - Suspected typos, grammar, punctuation, and political/compliance issues are listed separately, not silently corrected.
 

@@ -125,8 +125,6 @@ Rules:
 ---[reading-title:延伸阅读]
 
 [reading-book:书名|作者|译者|封面URL]
-[reading-enbook:Title|Author|Publisher|封面URL]
-[reading-jpbook:書名|著者|出版社|封面URL]
 
 ---[/reading]
 ```
@@ -134,8 +132,67 @@ Rules:
 Rules:
 - If `封面URL` is missing, leave it empty. The editor will show a blank book-cover placeholder. Do not invent a URL.
 - Book recommendations must be factually accurate and relevant to the article's subject matter.
-- Use web search to find correct titles, authors, publishers, and years.
-- **Format Rule**: Each field MUST be separated by `|` (pipe character). Do NOT use `、` or other delimiters within fields. Example: `[reading-book:日本现代文学的起源|柄谷行人|赵京华|https://xxx.jpg]`
+- Use web search to verify titles, authors and translators. Still check the publisher and year to make sure you are citing a real in-print edition and to fetch the matching cover — just do not print them in the block.
+- **Format Rule**: Each field MUST be separated by `|` (pipe character). Never use `、`、`，` or any other character **in place of** `|` to separate fields. (`、` is still allowed *inside* the translator field to join multiple translators — see below.)
+- **Each reading entry MUST be separated by a blank line.**
+
+### 作者字段与译者字段
+
+`[reading-book:]` 的第二字段是作者、第三字段是译者。两者格式如下：
+
+- **作者字段只写姓名，不写"著"**。`著` 是默认情形，一律省略。多位作者用半角 `/` 分隔，不用 `、` 或 `，`。
+- **编著加"编"**：编者、编著、主编的书，在姓名后空一格补 `编`。这是唯一保留的著作方式标记。
+- **译者字段**：`译者名 译`，姓名与 `译` 之间空一格；多位译者用 `、` 分隔。引用原版时留空。
+
+#### 国籍前缀
+
+`[国籍]` 标注的是**跨语言关系**，方括号与姓名之间**不留空格**。判断分三步：
+
+1. **引用的是原版（未经翻译）吗？** 是 → 作者不加国籍，译者字段留空。
+2. **是译本？** 作者与译者**各按本人国籍**标注。
+3. **中国人一律省略国籍。**
+
+因此中译本只有作者带前缀（译者是中国人），而一本英文书的日译本，作者和译者**两边都带前缀**。
+
+```markdown
+中译本   [reading-book:中国人留学日本史|[日]实藤惠秀|谭汝谦、林启彦 译|https://xxx.jpg]
+中译本   [reading-book:日本现代文学的起源|[日]柄谷行人|赵京华 译|https://xxx.jpg]
+中文编著 [reading-book:浮世通鉴：日本大众文化史|[日]日文研项目组 编|党蓓蓓 译|https://xxx.jpg]
+中文原著 [reading-book:韩国现代政治史|咸在凤||]
+外译外   [reading-book:思想戦：大日本帝国のプロパガンダ|[英]Barak Kushner|[日]井形彬 译|https://xxx.jpg]
+原版     [reading-book:日本映画は信頼できるか|四方田犬彦||]
+```
+
+「外译外」条即 Barak Kushner *The Thought War* 的日译本（明石書店，2016）：作者是英语世界学者标 `[英]`，译者井形彬是日本人标 `[日]`，两者都不是中国人，所以都不省略。
+
+#### 人名用哪种写法
+
+- **中译本 → 用中译本署名的中文译名**：`[美]约翰·W·道尔`、`[日]实藤惠秀`。
+- **其余情形（外译外、原版）→ 一律用本人原名**，不使用所引版本的音译或转写。上例的日译本封面署名是片假名「バラク・クシュナー」，条目仍写 `Barak Kushner`；译者井形彬本人原名即汉字，照写。
+
+```markdown
+✅ [reading-book:思想戦：大日本帝国のプロパガンダ|[英]Barak Kushner|[日]井形彬 译|https://xxx.jpg]
+❌ [reading-book:思想戦：大日本帝国のプロパガンダ|[英]バラク・クシュナー|[日]井形彬 译|https://xxx.jpg]
+```
+
+错误写法：`|[日] 实藤惠秀 著|`（方括号后多空格、多"著"）、`|柄谷行人、莲实重彦|`（多作者应用 `/`）、`|赵京华|`（漏"译"）、`|Barak Kushner|井形彬 译|`（外译外漏掉两侧国籍）。
+
+### 语法选择：延伸阅读一律用 `reading-book`
+
+**延伸阅读不展示出版社。** 无论中译本还是外文原版，一律使用：
+
+```markdown
+[reading-book:书名|作者|译者|封面URL]
+```
+
+`[reading-jpbook:書名|著者|出版社|封面URL]` 与 `[reading-enbook:Title|Author|Publisher|封面URL]` 的第三字段是**出版社**，与本栏体例不符，**不要用在延伸阅读里**；它们保留给正文内联书目。
+
+**未有中译本的外文书**：书名保留原文，译者字段留空。若引用的是该书**原版**，作者不加 `[国籍]`；若引用的是它在第三国的**译本**（如英文书的日译本），则按上文「国籍前缀」为作者和译者两侧都标注。
+
+```markdown
+[reading-book:日本映画は信頼できるか|四方田犬彦||]
+[reading-book:ハリウッド映画史講義――翳りの歴史のために|蓮實重彦||]
+```
 
 ## Keyword Blocks
 
