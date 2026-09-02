@@ -120,7 +120,7 @@ These blocks should appear directly after the preceding content, without any int
   2. **Kotobank (kotobank.jp)** — authoritative for Japanese scholars/writers not well covered by Wikipedia.
   3. **机构页面** — university faculty pages, publisher author pages (最权威的在职头衔来源).
   4. **百度百科 / 豆瓣作者页** — fallback for Chinese figures; treat as secondary, verify against one of the above.
-  - The name field format is `姓名（生年~卒年）`; use `姓名（生年~）` for a living person. **The year separator is the tilde `~`, never a hyphen or dash (`-`, `–`, `—`).** The 简介 field format is `身份头衔，代表作或主要贡献` — factual, ≤ 40 chars, no honorifics, and no repeated dates. **Birth/death years and titles must be confirmed by at least one authoritative source**; if sources conflict, pick the more authoritative one and note the conflict in `校对提醒`. Never invent a missing year.
+  - The name field format is `姓名（生年~卒年）`; use `姓名（生年~）` for a living person. **The year separator is the tilde `~`, never a hyphen or dash (`-`, `–`, `—`).** When the death year shares its first two digits with the birth year, drop those two digits: `舒群（1913~89）`, not `舒群（1913~1989）`. Write both years in full when the leading digits differ (`钱谦益（1582~1664）`) or when either year has fewer than four digits (`李白（701~762）`). The 简介 field format is `身份头衔，代表作或主要贡献` — factual, ≤ 40 chars, no honorifics, and no repeated dates. **Birth/death years and titles must be confirmed by at least one authoritative source**; if sources conflict, pick the more authoritative one and note the conflict in `校对提醒`. Never invent a missing year.
 - **人物照片**:
   1. **Wikimedia Commons** (`https://upload.wikimedia.org/wikipedia/commons/...`) — check the person's Wikipedia infobox image first.
   2. **Kotobank / 机构页 / publisher author page** portrait.
@@ -168,7 +168,7 @@ These blocks should appear directly after the preceding content, without any int
 #### Block Syntax Details
 
 - Insert the appropriate syntax block **immediately after the paragraph where the keyword is first mentioned**:
-  - Persons → `[universal:<URL>|姓名（生年~卒年）|身份/简介]`；在世人物使用 `姓名（生年~）`，简介字段不再重复年份。
+  - Persons → `[universal:<URL>|姓名（生年~卒年）|身份/简介]`；在世人物使用 `姓名（生年~）`，简介字段不再重复年份。卒年与生年前两位相同时省略前两位（`舒群（1913~89）`），不同世纪或非四位数年份写全（`钱谦益（1582~1664）`、`李白（701~762）`）。
   - Books → `[book:<URL>|书名|作者|出版社|年份]` / `[enbook:<URL>|Title|Author|Publisher|Year]` / `[jpbook:<URL>|書名|著者|出版社|年]`
     - **Field separator rule**: each field MUST be separated by `|`, do NOT use `、` or other delimiters within fields.
     - **Book name**: do NOT add 《》 or similar punctuation around the book name.
