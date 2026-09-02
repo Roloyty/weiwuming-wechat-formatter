@@ -200,7 +200,7 @@ These blocks should appear directly after the preceding content, without any int
     - 外译外（英文书的日译本）→ `[reading-book:思想戦：大日本帝国のプロパガンダ|[英]Barak Kushner|[日]井形彬 译|http://.../weiwuming/xxxx.jpg]`
     - 外文原版（无中译本）→ `[reading-book:日本映画は信頼できるか|四方田犬彦||]`
   - **延伸阅读不写出版社**：一律使用 `[reading-book:书名|作者|译者|封面URL]`。`[reading-jpbook:]` / `[reading-enbook:]` 的第三字段是出版社，与本栏体例不符，**不要在延伸阅读中使用**（它们保留给正文内联书目）。
-  - **未有中译本的外文书**：书名保留原文（日文写日文、英文写英文），作者写原名、不加 `[国籍]`（国籍前缀只给中译本），译者字段留空。例：`[reading-book:日本映画は信頼できるか|四方田犬彦||]`
+  - **未有中译本的外文书**：书名保留原文（日文写日文、英文写英文），译者字段留空。引用**原版**时作者不加 `[国籍]`，例：`[reading-book:日本映画は信頼できるか|四方田犬彦||]`；引用它在第三国的**译本**时按上条为作者与译者两侧都标注国籍。
 - All searched data must be factual. If uncertain, report in `校对提醒`.
 
 ### Staff and Fixed Footer
