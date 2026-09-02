@@ -194,7 +194,7 @@ These blocks should appear directly after the preceding content, without any int
     - 中文译本 → `[reading-book:中国人留学日本史|[日]实藤惠秀|谭汝谦、林启彦 译|http://.../weiwuming/xxxx.jpg]`
     - 中文原著 → `[reading-book:韩国现代政治史|咸在凤||]`
     - 中文编著 → `[reading-book:浮世通鉴：日本大众文化史|[日]日文研项目组 编|党蓓蓓 译|http://.../weiwuming/xxxx.jpg]`
-    - 日文原著 → `[reading-jpbook:日本映画は信頼できるか|四方田犬彦|現代思潮新社|]`（第三字段是出版社，不是译者）
+    - 外文原版（无中译本）→ `[reading-book:日本映画は信頼できるか|四方田犬彦||]`
   - **延伸阅读不写出版社**：一律使用 `[reading-book:书名|作者|译者|封面URL]`。`[reading-jpbook:]` / `[reading-enbook:]` 的第三字段是出版社，与本栏体例不符，**不要在延伸阅读中使用**（它们保留给正文内联书目）。
   - **未有中译本的外文书**：书名保留原文（日文写日文、英文写英文），作者写原名、不加 `[国籍]`（国籍前缀只给中译本），译者字段留空。例：`[reading-book:日本映画は信頼できるか|四方田犬彦||]`
 - All searched data must be factual. If uncertain, report in `校对提醒`.

@@ -125,8 +125,6 @@ Rules:
 ---[reading-title:延伸阅读]
 
 [reading-book:书名|作者|译者|封面URL]
-[reading-enbook:Title|Author|Publisher|封面URL]
-[reading-jpbook:書名|著者|出版社|封面URL]
 
 ---[/reading]
 ```
@@ -134,7 +132,7 @@ Rules:
 Rules:
 - If `封面URL` is missing, leave it empty. The editor will show a blank book-cover placeholder. Do not invent a URL.
 - Book recommendations must be factually accurate and relevant to the article's subject matter.
-- Use web search to find correct titles, authors, publishers, and years.
+- Use web search to verify titles, authors and translators. Still check the publisher and year to make sure you are citing a real in-print edition and to fetch the matching cover — just do not print them in the block.
 - **Format Rule**: Each field MUST be separated by `|` (pipe character). Never use `、`、`，` or any other character **in place of** `|` to separate fields. (`、` is still allowed *inside* the translator field to join multiple translators — see below.)
 - **Each reading entry MUST be separated by a blank line.**
 
