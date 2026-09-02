@@ -1255,6 +1255,11 @@
             border-left: 4px solid #d0d0d0;
             padding: 12px 16px;
             margin: 16px 0;
+        }
+
+        .wx-content .quote-para {
+            margin: 0;
+            padding: 0;
             color: #888888;
             font-family: 宋体, SimSun, serif;
             font-size: 14px;
@@ -2537,12 +2542,25 @@
         html = html.replace(/<li>\s*-\s*(.*?)<\/li>/g,
             '<div class="end-notes"><p>・$1</p></div>');
 
-        // 处理 <blockquote> → 转为带内联样式的 <p>（微信引用块格式）
+        // 处理 <blockquote> → 外层 section（边框）+ 内层 p（文字）的微信引用块
         html = html.replace(/<blockquote>([\s\S]*?)<\/blockquote>/g, function(match, content) {
-            let text = content.replace(/<p>/g, '').replace(/<\/p>/g, '').trim();
             const blankLine = '<section style="line-height:1em;margin:0 8px;"><p style="font-size:11pt;font-family:宋体,SimSun,serif;"><br/></p></section>';
+            const paraStyle = 'margin:0;padding:0;color:#888888;font-family:宋体,SimSun,serif;font-size:14px;line-height:1.85;letter-spacing:0.05em;';
+            // 边框/内边距放在外层 section，文字样式放在内层 <p>。
+            // 这样粘进公众号编辑器后按回车只会切分内层 <p>，
+            // 新行仍留在同一个引用框里，不会被拆成两个引用块。
+            let inner = content.trim();
+            const paras = inner.match(/<p>[\s\S]*?<\/p>/g);
+            if (paras && paras.length) {
+                inner = paras.map(function(para) {
+                    const t = para.replace(/^<p>/, '').replace(/<\/p>$/, '').trim();
+                    return '<p class="quote-para" style="' + paraStyle + '">' + t + '</p>';
+                }).join('');
+            } else {
+                inner = '<p class="quote-para" style="' + paraStyle + '">' + inner + '</p>';
+            }
             return blankLine +
-                   '<p class="quote-text" style="border-left:4px solid #d0d0d0;padding:12px 16px;margin:16px 0;color:#888888;font-family:宋体,SimSun,serif;font-size:14px;line-height:1.85;letter-spacing:0.05em;">' + text + '</p>' +
+                   '<section class="quote-text" style="border-left:4px solid #d0d0d0;padding:12px 16px;margin:16px 0;">' + inner + '</section>' +
                    blankLine;
         });
 
@@ -2867,6 +2885,8 @@
                 !el.classList.contains('jpbook-meta') &&
                 !el.classList.contains('jpbook-cover') &&
                 !el.classList.contains('quote-text') &&
+                !el.classList.contains('quote-para') &&
+                !el.closest('.quote-text') &&
                 !el.classList.contains('person-marker') &&
                 !el.classList.contains('person-name') &&
                 !el.classList.contains('person-photo') &&
@@ -3085,7 +3105,17 @@
         clone.querySelectorAll('.quote-text').forEach(el => {
             el.setAttribute(
                 'style',
-                'border-left: 4px solid #d0d0d0; padding: 12px 16px; margin: 16px 0; color: #888888; font-family: 宋体, SimSun, serif; font-size: 14px; line-height: 1.85; letter-spacing: 0.05em;'
+                'border-left: 4px solid #d0d0d0; padding: 12px 16px; margin: 16px 0; box-sizing: border-box;'
+            );
+        });
+
+        // 引用块内部段落：只带文字样式，不带边框。
+        // 公众号编辑器里回车会克隆当前块元素的属性再切分，
+        // 边框留在外层 section 上，回车才不会复制出第二个引用框。
+        clone.querySelectorAll('.quote-text > p, .quote-para').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 0px; box-sizing: border-box; color: #888888; font-family: 宋体, SimSun, serif; font-size: 14px; line-height: 1.85; letter-spacing: 0.05em;'
             );
         });
 
