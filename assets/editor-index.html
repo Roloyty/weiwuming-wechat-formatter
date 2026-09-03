@@ -3529,6 +3529,60 @@
         return '<section class="article135" style="box-sizing: border-box; margin: 0 0px;">' + clone.innerHTML + '</section>';
     }
 
+    // 手动选中 + Ctrl+C：走和「复制排版结果」同一条内联样式管线。
+    //
+    // 浏览器默认的选区序列化只保留完整落在选区内的元素：选区两端都在引用块内部的
+    // <p> 里时，承载竖线/内边距的外层 <section> 不会进剪贴板，粘到公众号只剩一段
+    // 裸文字（这就是"单独复制引用块没有格式，点按钮却正常"的原因）。
+    // 这里按选区重建祖先链，再复用 generateInlineStyledHtml()，
+    // 让两条复制路径产出完全一致的 HTML，顺带绕开 Chrome 把计算后 width
+    // 固化成像素值的老问题。
+    //
+    // 例外：选区里有 <img> 时不拦截。手工写入 HTML 字符串会让部分浏览器丢掉图片
+    // 节点，图片仍交给浏览器原生复制（与 copyRichText() 里的取舍一致）。
+    (function bindPreviewCopy() {
+        const preview = document.getElementById('preview');
+        if (!preview) return;
+
+        // 把选区内容重新套回它在预览区里的祖先元素（含各自的行内样式），
+        // 只保留选中的文字，但不丢外层的盒子。
+        function buildSelectionHolder(range, root) {
+            let frag = range.cloneContents();
+            let node = range.commonAncestorContainer;
+            if (node.nodeType !== 1) node = node.parentNode;
+            while (node && node !== root && root.contains(node)) {
+                const wrap = node.cloneNode(false);
+                wrap.removeAttribute('id');
+                wrap.appendChild(frag);
+                frag = document.createDocumentFragment();
+                frag.appendChild(wrap);
+                node = node.parentNode;
+            }
+            const holder = document.createElement('div');
+            holder.className = root.className;
+            holder.appendChild(frag);
+            return holder;
+        }
+
+        // 挂在 document 上：copy 事件的 target 取决于焦点，挂在 preview 上有漏网的可能
+        document.addEventListener('copy', function(e) {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+            const range = sel.getRangeAt(0);
+            if (!preview.contains(range.commonAncestorContainer)) return;
+            if (!e.clipboardData) return;
+            try {
+                const holder = buildSelectionHolder(range, preview);
+                if (holder.querySelector('img')) return;   // 图片交给浏览器原生复制
+                e.clipboardData.setData('text/html', generateInlineStyledHtml(holder));
+                e.clipboardData.setData('text/plain', sel.toString());
+                e.preventDefault();
+            } catch (err) {
+                console.warn('手动选中复制回退到浏览器默认行为：', err);
+            }
+        });
+    })();
+
         // 载入示例内容
         function loadSample() {
             const sampleImageBaseUrl = 'https://img.weiwuming.cn/weiwuming';
