@@ -1367,6 +1367,78 @@
             color: #000;
         }
 
+        /* 排版微调 */
+        .typo-tuner {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .typo-tabs {
+            display: flex;
+            gap: 0;
+            border: 1px solid var(--rule-soft);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .typo-tab {
+            border: none;
+            background: transparent;
+            padding: 3px 10px;
+            font-family: var(--ui-serif);
+            font-size: 12px;
+            color: var(--ink-soft);
+            cursor: pointer;
+        }
+
+        .typo-tab + .typo-tab { border-left: 1px solid var(--rule-soft); }
+        .typo-tab.active { background: var(--ink-soft); color: #fff; }
+
+        .typo-fields {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .typo-field {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .typo-label {
+            font-family: var(--ui-serif);
+            font-size: 12px;
+            color: var(--ink-soft);
+        }
+
+        .typo-input {
+            width: 62px;
+            padding: 2px 5px;
+            border: 1px solid var(--rule-soft);
+            border-radius: 3px;
+            background: #fff;
+            font-size: 12px;
+            color: var(--ink);
+        }
+
+        .typo-input.typo-select { width: 104px; }
+        .typo-unit { font-size: 11px; color: var(--ink-soft); }
+
+        .typo-reset {
+            border: 1px solid var(--rule-soft);
+            border-radius: 4px;
+            background: transparent;
+            padding: 3px 10px;
+            font-family: var(--ui-serif);
+            font-size: 12px;
+            color: var(--ink-soft);
+            cursor: pointer;
+        }
+
+        .typo-reset:hover { background: var(--rule-soft); }
+
         /* ========== 工作台控件 ========== */
 
         .style-options {
@@ -1661,6 +1733,8 @@
             <strong>语法手册</strong>
             <code> >>> 编者按 <<< </code> 编者按框（四边细线框，蓝色标签，灰色正文14px）<br>
             <code>-- 作者</code> 引文署名（写在引用块内单独一行，自动右对齐，-- / — 统一成 ——）<br>
+            <code>[style:lh=2.2|ls=1px|size=15]</code> 逐处样式覆盖（单独一行，作用于紧随其后的那一块；可用 lh 行距 / ls 字距 / size 字号 / font 字体 / indent 首行缩进 / align 对齐 / mt 上间距 / mb 下间距 / color 颜色）<br>
+            <code>&lt;u&gt;下划线&lt;/u&gt;</code> 下划线（粗体斜体用 Markdown 的 **粗** 和 *斜*）<br>
             <code>![book](url)</code> 书籍封面（url可留空，居中，带阴影，188px宽）<br>
             <code>[book:封面URL|书名|作者|出版社|年份]</code> 书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[enbook:封面URL|书名|作者|出版社|年份]</code> 英文书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
@@ -1721,6 +1795,16 @@
                         <input type="color" id="customBookColorPicker" value="#888888" onchange="setBookColor(this.value, this.parentElement)">
                     </div>
                 </div>
+            </div>
+            <div class="style-option typo-tuner">
+                <label>排版微调：</label>
+                <div class="typo-tabs">
+                    <button type="button" class="typo-tab active" onclick="setTypoGroup('body', this)">正文</button>
+                    <button type="button" class="typo-tab" onclick="setTypoGroup('quote', this)">引文</button>
+                    <button type="button" class="typo-tab" onclick="setTypoGroup('caption', this)">图注</button>
+                </div>
+                <div class="typo-fields" id="typoFields"></div>
+                <button type="button" class="typo-reset" onclick="resetTypoGroup()" title="把当前这一组恢复成默认">重置</button>
             </div>
         </div>
         <textarea class="editor-input" id="editor" placeholder="在此输入 Markdown 内容...&#10;&#10;特殊语法：&#10;>>> 编者按内容 — 编者按框&#10;## 小标题 — 蓝色居中（分割线下方）&#10;### 大标题 / 作者 — 章节标题（分割线上方）&#10;---[dot] — 点线分割线&#10;---[notes] / ---[/notes] — 注释区（可滚动）&#10;^[①脚注] — 注释条目&#10;&#10;快捷键：Ctrl+Enter 复制排版结果" oninput="updatePreview()"></textarea>
@@ -1968,6 +2052,225 @@
         return spans.map(sp => sp.offsetTop);
     }
 
+    // ===== 排版微调 =====
+    // 每一项的默认值都是"未设置"：不动它就不写任何覆盖，渲染与加这个功能之前逐像素一致。
+    // 改过的项会同时作用于预览区和两条复制路径（按钮 / 手动选中），
+    // 而且落点都在最外层容器上，粘进公众号后仍然可以再用微信自己的工具微调。
+
+    const CAPTION_SEL = '.book-title, .book-meta, .enbook-title, .enbook-meta, ' +
+                        '.jpbook-title, .jpbook-meta, .person-name, .person-bio, .reading-meta';
+
+    // sel 命中的元素上写 css 属性，取值来自 styleSettings[组][key]；unit 为空表示无单位
+    const STYLE_RULES = {
+        body: [
+            { sel: '.body-para',        css: 'lineHeight',    key: 'lineHeight' },
+            { sel: '.body-para',        css: 'textAlign',     key: 'textAlign' },
+            { sel: '.body-para',        css: 'textIndent',    key: 'textIndent',    unit: 'em' },
+            { sel: '.body-para > span', css: 'fontSize',      key: 'fontSize',      unit: 'px' },
+            { sel: '.body-para > span', css: 'fontFamily',    key: 'fontFamily' },
+            { sel: '.body-para > span', css: 'letterSpacing', key: 'letterSpacing', unit: 'px' },
+            { sel: '.para-gap',         css: 'lineHeight',    key: 'blockSpacing',  unit: 'em' }
+        ],
+        quote: [
+            { sel: '.quote-text',              css: 'lineHeight',    key: 'lineHeight' },
+            { sel: '.quote-text',              css: 'letterSpacing', key: 'letterSpacing', unit: 'px' },
+            { sel: '.quote-text',              css: 'marginTop',     key: 'blockSpacing',  unit: 'px' },
+            { sel: '.quote-text',              css: 'marginBottom',  key: 'blockSpacing',  unit: 'px' },
+            { sel: '.quote-para, .quote-cite', css: 'fontSize',      key: 'fontSize',      unit: 'px' },
+            { sel: '.quote-para, .quote-cite', css: 'fontFamily',    key: 'fontFamily' },
+            { sel: '.quote-para',              css: 'textIndent',    key: 'textIndent',    unit: 'em' }
+        ],
+        caption: [
+            { sel: CAPTION_SEL, css: 'fontSize',      key: 'fontSize',      unit: 'px' },
+            { sel: CAPTION_SEL, css: 'fontFamily',    key: 'fontFamily' },
+            { sel: CAPTION_SEL, css: 'lineHeight',    key: 'lineHeight' },
+            { sel: CAPTION_SEL, css: 'letterSpacing', key: 'letterSpacing', unit: 'px' },
+            { sel: CAPTION_SEL, css: 'textAlign',     key: 'textAlign' }
+        ]
+    };
+
+    const FONT_STACKS = [
+        ['', '默认'],
+        ['宋体, SimSun, serif', '宋体'],
+        ['黑体, SimHei, "Microsoft YaHei", sans-serif', '黑体'],
+        ['楷体, KaiTi, STKaiti, serif', '楷体'],
+        ['仿宋, FangSong, STFangsong, serif', '仿宋'],
+        ['-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif', '系统无衬线'],
+        ['Georgia, "Times New Roman", serif', 'Georgia（西文）']
+    ];
+
+    const ALIGN_OPTIONS = [['', '默认'], ['justify', '两端对齐'], ['left', '左对齐'], ['center', '居中'], ['right', '右对齐']];
+
+    const TYPO_FIELDS = {
+        fontFamily:    { label: '字体',     type: 'select', options: FONT_STACKS },
+        fontSize:      { label: '字号',     type: 'number', step: 1,    min: 8,   max: 40, suffix: 'px' },
+        lineHeight:    { label: '行间距',   type: 'number', step: 0.05, min: 0.8, max: 4 },
+        letterSpacing: { label: '字间距',   type: 'number', step: 0.1,  min: -2,  max: 10, suffix: 'px' },
+        textIndent:    { label: '首行缩进', type: 'number', step: 1,    min: 0,   max: 4,  suffix: '字' },
+        blockSpacing:  { label: '段间距',   type: 'number', step: 0.1,  min: 0,   max: 5,  suffix: '倍' },
+        textAlign:     { label: '对齐',     type: 'select', options: ALIGN_OPTIONS }
+    };
+
+    // [字段名, 覆盖项]；段间距在正文是空行倍数、在引文是上下 px，所以要分别标注
+    const GROUP_FIELDS = {
+        body:    [['fontFamily'], ['fontSize'], ['lineHeight'], ['letterSpacing'], ['textIndent'], ['blockSpacing'], ['textAlign']],
+        quote:   [['fontFamily'], ['fontSize'], ['lineHeight'], ['letterSpacing'], ['textIndent'],
+                  ['blockSpacing', { label: '上下间距', step: 1, min: 0, max: 60, suffix: 'px' }]],
+        caption: [['fontFamily'], ['fontSize'], ['lineHeight'], ['letterSpacing'], ['textAlign']]
+    };
+
+    let styleSettings = { body: {}, quote: {}, caption: {} };
+    let currentTypoGroup = 'body';
+
+    // 把 styleSettings 里"已设置"的项写到 root 内对应的元素上。
+    // 预览区每次重渲染后调一次；复制时对克隆体再调一次 —— 两条路径读同一张表。
+    function applyStyleSettings(root) {
+        Object.keys(STYLE_RULES).forEach(function(group) {
+            const cfg = styleSettings[group] || {};
+            STYLE_RULES[group].forEach(function(rule) {
+                const raw = cfg[rule.key];
+                if (raw === undefined || raw === null || raw === '') return;
+                const value = rule.unit ? raw + rule.unit : String(raw);
+                root.querySelectorAll(rule.sel).forEach(function(el) {
+                    el.style[rule.css] = value;
+                });
+            });
+        });
+    }
+
+    function typoFieldSpec(name, override) {
+        return Object.assign({}, TYPO_FIELDS[name], override || {});
+    }
+
+    function renderTypoFields() {
+        const wrap = document.getElementById('typoFields');
+        if (!wrap) return;
+        const cfg = styleSettings[currentTypoGroup] || {};
+        wrap.innerHTML = '';
+        GROUP_FIELDS[currentTypoGroup].forEach(function(entry) {
+            const name = entry[0];
+            const spec = typoFieldSpec(name, entry[1]);
+            const cell = document.createElement('span');
+            cell.className = 'typo-field';
+
+            const label = document.createElement('span');
+            label.className = 'typo-label';
+            label.textContent = spec.label;
+            cell.appendChild(label);
+
+            let input;
+            if (spec.type === 'select') {
+                input = document.createElement('select');
+                spec.options.forEach(function(opt) {
+                    const o = document.createElement('option');
+                    o.value = opt[0];
+                    o.textContent = opt[1];
+                    input.appendChild(o);
+                });
+            } else {
+                input = document.createElement('input');
+                input.type = 'number';
+                input.step = spec.step;
+                input.min = spec.min;
+                input.max = spec.max;
+                input.placeholder = '默认';
+                if (spec.suffix) input.title = spec.label + '（单位 ' + spec.suffix + '，留空＝默认）';
+            }
+            input.value = (cfg[name] === undefined || cfg[name] === null) ? '' : cfg[name];
+            input.className = 'typo-input' + (spec.type === 'select' ? ' typo-select' : '');
+            input.addEventListener('input', function() { setTypoValue(name, input.value); });
+            cell.appendChild(input);
+
+            if (spec.suffix && spec.type !== 'select') {
+                const unit = document.createElement('span');
+                unit.className = 'typo-unit';
+                unit.textContent = spec.suffix;
+                cell.appendChild(unit);
+            }
+            wrap.appendChild(cell);
+        });
+    }
+
+    function setTypoValue(name, value) {
+        const cfg = styleSettings[currentTypoGroup] || (styleSettings[currentTypoGroup] = {});
+        if (value === '' || value === null) delete cfg[name];
+        else cfg[name] = value;
+        updatePreview();
+    }
+
+    function setTypoGroup(group, btn) {
+        currentTypoGroup = group;
+        document.querySelectorAll('.typo-tab').forEach(function(b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        renderTypoFields();
+    }
+
+    function resetTypoGroup() {
+        styleSettings[currentTypoGroup] = {};
+        renderTypoFields();
+        updatePreview();
+    }
+
+    // ===== 逐处覆盖：[style:lh=2.2|ls=1px|size=15] 作用于紧随其后的那一块 =====
+    const STYLE_OVERRIDE_KEYS = {
+        lh:     { css: 'lineHeight' },
+        ls:     { css: 'letterSpacing', unit: 'px' },
+        size:   { css: 'fontSize',      unit: 'px' },
+        font:   { css: 'fontFamily' },
+        indent: { css: 'textIndent',    unit: 'em' },
+        align:  { css: 'textAlign' },
+        mt:     { css: 'marginTop',     unit: 'px' },
+        mb:     { css: 'marginBottom',  unit: 'px' },
+        color:  { css: 'color' }
+    };
+
+    const FONT_ALIAS = {
+        '宋体': '宋体, SimSun, serif',
+        '黑体': '黑体, SimHei, "Microsoft YaHei", sans-serif',
+        '楷体': '楷体, KaiTi, STKaiti, serif',
+        '仿宋': '仿宋, FangSong, STFangsong, serif',
+        '无衬线': '-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif'
+    };
+
+    // 字号/字体/颜色/缩进/对齐要往下压：内层元素自带同名行内样式时会盖住外层，
+    // 所以对这几项连带改写已经声明过它的后代（和引用块那个坑是同一个道理）
+    const OVERRIDE_CASCADE = ['fontSize', 'fontFamily', 'color', 'textIndent', 'textAlign'];
+
+    function parseStyleOverride(spec) {
+        const ov = {};
+        String(spec || '').split('|').forEach(function(pair) {
+            const i = pair.indexOf('=');
+            if (i < 0) return;
+            const k = pair.slice(0, i).trim().toLowerCase();
+            let v = pair.slice(i + 1).trim();
+            const def = STYLE_OVERRIDE_KEYS[k];
+            if (!def || !v) return;
+            if (k === 'font') v = FONT_ALIAS[v] || v;
+            else if (def.unit && /^-?[\d.]+$/.test(v)) v = v + def.unit;
+            ov[def.css] = v;
+        });
+        return ov;
+    }
+
+    function applyStyleOverride(el, ov) {
+        Object.keys(ov).forEach(function(css) {
+            el.style[css] = ov[css];
+            if (OVERRIDE_CASCADE.indexOf(css) >= 0) {
+                el.querySelectorAll('*').forEach(function(kid) {
+                    if (kid.style[css]) kid.style[css] = ov[css];
+                });
+            }
+        });
+    }
+
+    // 排在 applyStyleSettings 之后调用：逐处覆盖优先级高于全局微调
+    function applyBlockOverrides(root, strip) {
+        root.querySelectorAll('[data-style-override]').forEach(function(el) {
+            applyStyleOverride(el, parseStyleOverride(el.getAttribute('data-style-override')));
+            if (strip) el.removeAttribute('data-style-override');
+        });
+    }
+
     function updatePreview() {
         const editor = document.getElementById('editor');
         const preview = document.getElementById('preview');
@@ -1984,6 +2287,10 @@
 
         // 应用主题色到预览区域
         applyThemeToPreview(preview, currentThemeColor);
+
+        // 应用排版微调（没改过任何一项时这里什么都不做），再压上逐处覆盖
+        applyStyleSettings(preview);
+        applyBlockOverrides(preview, false);
 
         buildSyncAnchors();
 
@@ -2458,6 +2765,15 @@
                 continue;
             }
 
+            // [style:...] — 逐处样式覆盖，作用于紧随其后的那一块
+            let styleOvMatch = line.match(/^\s*\[style:(.+?)\]\s*$/);
+            if (styleOvMatch) {
+                result.push('<div class="style-override" data-ov="' +
+                            styleOvMatch[1].replace(/"/g, '&quot;') + '"></div>');
+                result.push('');   // 空行收尾，否则 marked 会把下一块并进同一个 HTML block
+                continue;
+            }
+
             // ### 标题 / 作者 — 章节大标题（在分割线上方）
             let h3AuthorMatch = line.match(/^###\s+(.+?)\s*\/\s*(.+)$/);
             if (h3AuthorMatch) {
@@ -2565,7 +2881,7 @@
 
         // 处理 <blockquote> → 外层 section（边框）+ 内层 p（文字）的微信引用块
         html = html.replace(/<blockquote>([\s\S]*?)<\/blockquote>/g, function(match, content) {
-            const blankLine = '<section style="line-height:1em;margin:0 8px;"><p style="font-size:11pt;font-family:宋体,SimSun,serif;"><br/></p></section>';
+            const blankLine = '<section class="para-gap" style="line-height:1em;margin:0 8px;"><p style="font-size:11pt;font-family:宋体,SimSun,serif;"><br/></p></section>';
             const paraStyle = 'margin:0;padding:0;color:#888888;font-family:宋体,SimSun,serif;font-size:14px;line-height:inherit;letter-spacing:inherit;';
             const citeStyle = paraStyle + 'text-align:right;margin-top:6px;';
             // 引文署名行：单独一行以 -- / --- / — / —— 开头 → 右对齐，并统一成中文破折号。
@@ -2622,8 +2938,8 @@
                 return match;
             }
             // 段落之间插入空行section
-            return '<section style="line-height:2em;margin:0 8px;text-align:justify;"><span style="font-size:15px;font-family:宋体,SimSun,serif;">' + content + '</span></section>' +
-                   '<section style="line-height:1em;margin:0 8px;"><p style="font-size:11pt;font-family:宋体,SimSun,serif;"><br/></p></section>';
+            return '<section class="body-para" style="line-height:2em;margin:0 8px;text-align:justify;"><span style="font-size:15px;font-family:宋体,SimSun,serif;">' + content + '</span></section>' +
+                   '<section class="para-gap" style="line-height:1em;margin:0 8px;"><p style="font-size:11pt;font-family:宋体,SimSun,serif;"><br/></p></section>';
         });
 
         // 处理已经存在的foreign-note，避免重复处理
@@ -2688,6 +3004,19 @@
         }
 
         walkDOM(tempDiv);
+
+        // 逐处覆盖：把 [style:...] 标记的设置挂到紧随其后的块上，然后删掉标记本身。
+        // 引用块前后各有一行占位空行，要跳过去才能落到引用框上。
+        tempDiv.querySelectorAll('.style-override').forEach(function(marker) {
+            let target = marker.nextElementSibling;
+            while (target && target.classList &&
+                   (target.classList.contains('para-gap') || target.classList.contains('sync-anchor'))) {
+                target = target.nextElementSibling;
+            }
+            if (target) target.setAttribute('data-style-override', marker.getAttribute('data-ov') || '');
+            marker.remove();
+        });
+
         html = tempDiv.innerHTML;
 
         return html;
@@ -3639,6 +3968,13 @@
             );
         });
 
+        clone.querySelectorAll('u').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 0px; box-sizing: border-box; text-decoration: underline;'
+            );
+        });
+
         clone.querySelectorAll('a').forEach(el => {
             el.setAttribute(
                 'style',
@@ -3686,6 +4022,10 @@
                 'margin: 0px auto; padding: 0px; box-sizing: border-box; max-width: 100%; height: auto; display: block;'
             );
         });
+
+        // 排版微调：必须排在全部既有规则之后，否则会被上面的 setAttribute('style', ...) 覆盖掉
+        applyStyleSettings(clone);
+        applyBlockOverrides(clone, true);
 
         return '<section class="article135" style="box-sizing: border-box; margin: 0 0px;">' + clone.innerHTML + '</section>';
     }
@@ -4563,6 +4903,9 @@
         });
         window.addEventListener('resize', renderEditorHighlight);
     })();
+
+    // 排版微调面板初始渲染
+    renderTypoFields();
 </script>
 
 </body>
