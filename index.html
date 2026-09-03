@@ -1267,6 +1267,17 @@
             letter-spacing: 0.05em;
         }
 
+        .wx-content .quote-cite {
+            margin: 6px 0 0;
+            padding: 0;
+            color: #888888;
+            font-family: 宋体, SimSun, serif;
+            font-size: 14px;
+            line-height: 1.85;
+            letter-spacing: 0.05em;
+            text-align: right;
+        }
+
         .wx-content strong { font-weight: 700; }
         .wx-content em { font-style: italic; }
 
@@ -1640,6 +1651,7 @@
         <div class="syntax-help" id="syntaxHelp">
             <strong>语法手册</strong>
             <code> >>> 编者按 <<< </code> 编者按框（四边细线框，蓝色标签，灰色正文14px）<br>
+            <code>-- 作者</code> 引文署名（写在引用块内单独一行，自动右对齐，-- / — 统一成 ——）<br>
             <code>![book](url)</code> 书籍封面（url可留空，居中，带阴影，188px宽）<br>
             <code>[book:封面URL|书名|作者|出版社|年份]</code> 书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[enbook:封面URL|书名|作者|出版社|年份]</code> 英文书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
@@ -2546,18 +2558,45 @@
         html = html.replace(/<blockquote>([\s\S]*?)<\/blockquote>/g, function(match, content) {
             const blankLine = '<section style="line-height:1em;margin:0 8px;"><p style="font-size:11pt;font-family:宋体,SimSun,serif;"><br/></p></section>';
             const paraStyle = 'margin:0;padding:0;color:#888888;font-family:宋体,SimSun,serif;font-size:14px;line-height:1.85;letter-spacing:0.05em;';
+            const citeStyle = paraStyle + 'text-align:right;margin-top:6px;';
+            // 引文署名行：单独一行以 -- / --- / — / —— 开头 → 右对齐，并统一成中文破折号。
+            // HTML 会把连续空格折叠成一个，靠手打空格推不动位置，所以给它一个固定写法。
+            const CITE_RE = /^\s*(?:-{2,}|[—–]{1,2})\s*(?=\S)/;
+
             // 边框/内边距放在外层 section，文字样式放在内层 <p>。
             // 这样粘进公众号编辑器后按回车只会切分内层 <p>，
             // 新行仍留在同一个引用框里，不会被拆成两个引用块。
+            function renderQuoteParagraph(text) {
+                const lines = text.split(/<br\s*\/?>/i);
+                const out = [];
+                let buf = [];
+                function flush() {
+                    if (!buf.length) return;
+                    const body = buf.join('<br/>');
+                    if (body.trim()) out.push('<p class="quote-para" style="' + paraStyle + '">' + body + '</p>');
+                    buf = [];
+                }
+                lines.forEach(function(line) {
+                    if (CITE_RE.test(line)) {
+                        flush();
+                        out.push('<p class="quote-cite" style="' + citeStyle + '" align="right">' +
+                                 line.trim().replace(CITE_RE, '——') + '</p>');
+                    } else {
+                        buf.push(line);
+                    }
+                });
+                flush();
+                return out.join('');
+            }
+
             let inner = content.trim();
             const paras = inner.match(/<p>[\s\S]*?<\/p>/g);
             if (paras && paras.length) {
                 inner = paras.map(function(para) {
-                    const t = para.replace(/^<p>/, '').replace(/<\/p>$/, '').trim();
-                    return '<p class="quote-para" style="' + paraStyle + '">' + t + '</p>';
+                    return renderQuoteParagraph(para.replace(/^<p>/, '').replace(/<\/p>$/, '').trim());
                 }).join('');
             } else {
-                inner = '<p class="quote-para" style="' + paraStyle + '">' + inner + '</p>';
+                inner = renderQuoteParagraph(inner);
             }
             return blankLine +
                    '<section class="quote-text" style="border-left:4px solid #d0d0d0;padding:12px 16px;margin:16px 0;">' + inner + '</section>' +
@@ -3117,6 +3156,15 @@
                 'style',
                 'margin: 0px; padding: 0px; box-sizing: border-box; color: #888888; font-family: 宋体, SimSun, serif; font-size: 14px; line-height: 1.85; letter-spacing: 0.05em;'
             );
+        });
+
+        // 引文署名行（-- 作者）：右对齐。必须排在上一条之后，否则会被它覆盖掉
+        clone.querySelectorAll('.quote-cite').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 6px 0px 0px; padding: 0px; box-sizing: border-box; color: #888888; font-family: 宋体, SimSun, serif; font-size: 14px; line-height: 1.85; letter-spacing: 0.05em; text-align: right;'
+            );
+            el.setAttribute('align', 'right');
         });
 
         // 人物介绍
