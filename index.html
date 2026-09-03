@@ -3526,6 +3526,108 @@
             el.setAttribute('align', 'center');
         });
 
+        // ===== 标准 Markdown 元素 =====
+        // 这些元素在预览区只靠 <style> 里的类型选择器上样式，而 <style> 不会跟着进剪贴板，
+        // 粘到公众号后就只剩浏览器默认样式：标题变巨大、列表字体不对、表格没框线、
+        // 代码块没底色。和引用块丢竖线是同一类问题，这里按预览区 CSS 补齐行内样式。
+        const MD_SANS = '-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif';
+        const MD_SONG = '宋体, SimSun, serif';
+        const MD_MONO = '"JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace';
+
+        clone.querySelectorAll('h1').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 17px; font-weight: 400; color: #000000; text-align: center; line-height: normal; font-family: ' + MD_SANS + ';'
+            );
+            el.setAttribute('align', 'center');
+        });
+
+        // <h2> 正常会被 postprocessHtml 转成 .section-title，这条是兜底
+        clone.querySelectorAll('h2').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 8px; padding: 0px; box-sizing: border-box; font-size: 15px; font-weight: bold; color: ' + currentThemeColor + '; text-align: center; line-height: 2em; font-family: ' + MD_SONG + ';'
+            );
+            el.setAttribute('align', 'center');
+        });
+
+        clone.querySelectorAll('h3').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 0px; box-sizing: border-box; font-size: 16px; font-weight: bold; color: #7d90a8; text-align: center; line-height: 1.75; font-family: ' + MD_SANS + ';'
+            );
+            el.setAttribute('align', 'center');
+        });
+
+        clone.querySelectorAll('h4').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 20px 0px 10px; padding: 0px; box-sizing: border-box; font-size: 15px; font-weight: 600; color: #7d90a8; line-height: 1.5; font-family: ' + MD_SANS + ';'
+            );
+        });
+
+        clone.querySelectorAll('ul, ol').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 16px 8px; padding: 0px 0px 0px 24px; box-sizing: border-box;'
+            );
+        });
+
+        clone.querySelectorAll('li').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px 0px 4px; padding: 0px; box-sizing: border-box; font-size: 15px; color: #000000; line-height: 2; font-family: ' + MD_SONG + ';'
+            );
+        });
+
+        clone.querySelectorAll('a').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 0px; box-sizing: border-box; color: ' + currentThemeColor + '; text-decoration: none;'
+            );
+        });
+
+        clone.querySelectorAll('pre').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 16px 0px; padding: 16px; box-sizing: border-box; background-color: #2d2d2d; color: #cccccc; border-radius: 4px; overflow-x: auto; font-size: 13px; line-height: 1.6; font-family: ' + MD_MONO + ';'
+            );
+        });
+
+        clone.querySelectorAll('code').forEach(el => {
+            el.setAttribute(
+                'style',
+                el.closest('pre')
+                    ? 'margin: 0px; padding: 0px; box-sizing: border-box; background: none; color: inherit; border-radius: 0px; font-size: 13px; font-family: ' + MD_MONO + ';'
+                    : 'margin: 0px; padding: 2px 6px; box-sizing: border-box; background-color: #f5f5f5; color: #c7254e; border-radius: 3px; font-size: 13px; font-family: ' + MD_MONO + ';'
+            );
+        });
+
+        // 表格显式声明宽度，是 AGENTS.md「自适应宽度元素不要写 width」的有意例外：
+        // 不写宽度时公众号里的表格会缩到内容宽度，比照搬预览差得更远。
+        clone.querySelectorAll('table').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 16px 0px; padding: 0px; box-sizing: border-box; width: 100%; max-width: 100%; border-collapse: collapse; font-size: 14px;'
+            );
+        });
+
+        clone.querySelectorAll('th, td').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px; padding: 8px 12px; box-sizing: border-box; border: 1px solid #e0e0e0; text-align: left; font-size: 14px; line-height: 2; font-family: ' + MD_SONG + ';' +
+                (el.tagName === 'TH' ? ' background-color: #f5f5f5; font-weight: 600; color: #000000;' : '')
+            );
+        });
+
+        // 普通 Markdown 图片兜底：书籍封面、人物照等已有专属规则，只补没被处理过的
+        clone.querySelectorAll('img:not([style])').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: 0px auto; padding: 0px; box-sizing: border-box; max-width: 100%; height: auto; display: block;'
+            );
+        });
+
         return '<section class="article135" style="box-sizing: border-box; margin: 0 0px;">' + clone.innerHTML + '</section>';
     }
 
