@@ -201,10 +201,10 @@ Rules:
 ### Persons
 
 ```markdown
-[universal:图片URL|姓名（生年~卒年）|身份/简介]
+[universal:图片URL|姓名（生年~ 卒年）|身份/简介]
 ```
 
-The first text field is automatically bold. Put verified birth/death years immediately after the name: `姓名（生年~卒年）`; for living persons use `姓名（生年~）`. **The year separator is the tilde `~`** — never a hyphen or dash (`-`, `–`, `—`). When the death year shares its first two digits with the birth year, drop those two digits: `舒群（1913~89）`, not `舒群（1913~1989）`. Write both years in full when the leading digits differ (`钱谦益（1582~1664）`) or when either year has fewer than four digits (`李白（701~762）`). Keep dates out of the second field, which contains identity and contribution only. Never invent a missing year, and do not add Markdown `**`.
+The first text field is automatically bold. Put verified birth/death years immediately after the name: `姓名（生年~ 卒年）`; for living persons use `姓名（生年~）`. **The year separator is the tilde `~`** — never a hyphen or dash (`-`, `–`, `—`) — **and exactly one space follows the tilde whenever a death year comes after it**: `舒群（1913~ 89）`, not `舒群（1913~89）`. A living person's name ends right after the tilde, with no trailing space. When the death year shares its first two digits with the birth year, drop those two digits: `舒群（1913~ 89）`, not `舒群（1913~ 1989）`. Write both years in full when the leading digits differ (`钱谦益（1582~ 1664）`) or when either year has fewer than four digits (`李白（701~ 762）`). Keep dates out of the second field, which contains identity and contribution only. Never invent a missing year, and do not add Markdown `**`.
 
 ### Books
 
@@ -334,6 +334,6 @@ Before delivery, check:
 - **Extended reading section** is present above staff entries with relevant book recommendations.
 - **Keyword blocks** are inserted after relevant paragraphs for key persons, books, events, and photos.
 - `[universal:]` is used for standard cards/posters/ads; `[origin:]` is used for photos/artworks that must preserve intrinsic proportions; neither syntax contains `**` in its first text field.
-- Every person card puts verified birth/death years immediately after the name and does not repeat them in the description.
+- Every person card puts verified birth/death years immediately after the name, with **one space after the tilde before the death year** (`舒群（1913~ 89）`; a living person's `姓名（生年~）` has nothing after the tilde), and does not repeat them in the description.
 - Every movie/TV poster card uses the bare work title without `海报`, puts `导演：...，编剧：...` in one field/rendered line (multiple names joined with `/`), keeps `上映/首播` and `片长` on one line, and omits synopsis/context unless explicitly requested.
 - Typos, grammar, punctuation, and political/compliance issues are reported separately under `校对提醒`.
