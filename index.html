@@ -1367,6 +1367,55 @@
             color: #000;
         }
 
+        /* 图注卡片：行距/字距挂在最外层，各行写 inherit。
+           公众号编辑器的行间距/字间距工具是写在最外层段落元素上的，内层只要自带
+           这两个属性就会把它盖掉（和引用块是同一个坑）。这些规则要排在上面各自的
+           规则之后，靠"同特异度后来居上"生效，所以别往前挪。
+           三个书籍变体的各行原本是 line-height:1 / 1em，对同一个元素来说算出来
+           一样，统一成无单位 1 之后逐像素不变；唯一的例外是 .book-meta 原本写的是
+           normal（12px 宋体下解析为 14px），改为跟随后收紧 2px —— 英文、日文两个
+           变体的 meta 行本来就是 1em，这次一并对齐。 */
+        .wx-content .book-info,
+        .wx-content .enbook-info,
+        .wx-content .jpbook-info {
+            line-height: 1;
+            letter-spacing: 0.544px;
+        }
+
+        /* 人物/图片说明的各行本来就没写字距，所以这里只挂行距，
+           字距保持不设置 —— 公众号那边调字距靠继承，本来就调得动 */
+        .wx-content .person-info {
+            line-height: 1;
+        }
+
+        .wx-content .book-info .book-cover,
+        .wx-content .book-info .book-marker,
+        .wx-content .book-info .book-title,
+        .wx-content .book-info .book-meta,
+        .wx-content .enbook-info .enbook-cover,
+        .wx-content .enbook-info .enbook-marker,
+        .wx-content .enbook-info .enbook-title,
+        .wx-content .enbook-info .enbook-meta,
+        .wx-content .jpbook-info .jpbook-cover,
+        .wx-content .jpbook-info .jpbook-marker,
+        .wx-content .jpbook-info .jpbook-title,
+        .wx-content .jpbook-info .jpbook-meta,
+        .wx-content .person-info .person-photo,
+        .wx-content .person-info .person-marker,
+        .wx-content .person-info .person-name,
+        .wx-content .person-info .person-bio {
+            line-height: inherit;
+        }
+
+        .wx-content .book-info .book-title,
+        .wx-content .book-info .book-meta,
+        .wx-content .enbook-info .enbook-title,
+        .wx-content .enbook-info .enbook-meta,
+        .wx-content .jpbook-info .jpbook-title,
+        .wx-content .jpbook-info .jpbook-meta {
+            letter-spacing: inherit;
+        }
+
         /* 排版微调 */
         .typo-tuner {
             flex-wrap: wrap;
@@ -2060,6 +2109,11 @@
     const CAPTION_SEL = '.book-title, .book-meta, .enbook-title, .enbook-meta, ' +
                         '.jpbook-title, .jpbook-meta, .person-name, .person-bio, .reading-meta';
 
+    // 行距/字距要落在卡片最外层，各行是 inherit，写在行上反而会把继承链掐断。
+    // .reading-meta 没有可挂的外层卡片（延伸阅读区各行行距不一致，没法统一搬迁），
+    // 所以它仍然直接写在行上。
+    const CAPTION_BOX_SEL = '.book-info, .enbook-info, .jpbook-info, .person-info, .reading-meta';
+
     // sel 命中的元素上写 css 属性，取值来自 styleSettings[组][key]；unit 为空表示无单位
     const STYLE_RULES = {
         body: [
@@ -2081,11 +2135,11 @@
             { sel: '.quote-para',              css: 'textIndent',    key: 'textIndent',    unit: 'em' }
         ],
         caption: [
-            { sel: CAPTION_SEL, css: 'fontSize',      key: 'fontSize',      unit: 'px' },
-            { sel: CAPTION_SEL, css: 'fontFamily',    key: 'fontFamily' },
-            { sel: CAPTION_SEL, css: 'lineHeight',    key: 'lineHeight' },
-            { sel: CAPTION_SEL, css: 'letterSpacing', key: 'letterSpacing', unit: 'px' },
-            { sel: CAPTION_SEL, css: 'textAlign',     key: 'textAlign' }
+            { sel: CAPTION_SEL,     css: 'fontSize',      key: 'fontSize',      unit: 'px' },
+            { sel: CAPTION_SEL,     css: 'fontFamily',    key: 'fontFamily' },
+            { sel: CAPTION_BOX_SEL, css: 'lineHeight',    key: 'lineHeight' },
+            { sel: CAPTION_BOX_SEL, css: 'letterSpacing', key: 'letterSpacing', unit: 'px' },
+            { sel: CAPTION_SEL,     css: 'textAlign',     key: 'textAlign' }
         ]
     };
 
@@ -4021,6 +4075,22 @@
                 'style',
                 'margin: 0px auto; padding: 0px; box-sizing: border-box; max-width: 100%; height: auto; display: block;'
             );
+        });
+
+        // 图注卡片：行距/字距搬到最外层，各行 inherit（理由同预览区那段 CSS 的注释）
+        clone.querySelectorAll('.book-info, .enbook-info, .jpbook-info').forEach(el => {
+            el.style.lineHeight = '1';
+            el.style.letterSpacing = '0.544px';
+        });
+
+        clone.querySelectorAll('.person-info').forEach(el => {
+            el.style.lineHeight = '1';
+        });
+
+        clone.querySelectorAll('.book-info > *, .enbook-info > *, .jpbook-info > *, .person-info > *').forEach(el => {
+            el.style.lineHeight = 'inherit';
+            // 本来就没写字距的行（人物卡各行）保持不写，免得凭空多出 0.544px
+            if (el.style.letterSpacing) el.style.letterSpacing = 'inherit';
         });
 
         // 排版微调：必须排在全部既有规则之后，否则会被上面的 setAttribute('style', ...) 覆盖掉
