@@ -1378,14 +1378,14 @@
         .wx-content .book-info,
         .wx-content .enbook-info,
         .wx-content .jpbook-info {
-            line-height: 1;
+            line-height: 1.6;
             letter-spacing: 0.544px;
         }
 
         /* 人物/图片说明的各行本来就没写字距，所以这里只挂行距，
            字距保持不设置 —— 公众号那边调字距靠继承，本来就调得动 */
         .wx-content .person-info {
-            line-height: 1;
+            line-height: 1.6;
         }
 
         .wx-content .book-info .book-cover,
@@ -4079,12 +4079,12 @@
 
         // 图注卡片：行距/字距搬到最外层，各行 inherit（理由同预览区那段 CSS 的注释）
         clone.querySelectorAll('.book-info, .enbook-info, .jpbook-info').forEach(el => {
-            el.style.lineHeight = '1';
+            el.style.lineHeight = '1.6';
             el.style.letterSpacing = '0.544px';
         });
 
         clone.querySelectorAll('.person-info').forEach(el => {
-            el.style.lineHeight = '1';
+            el.style.lineHeight = '1.6';
         });
 
         clone.querySelectorAll('.book-info > *, .enbook-info > *, .jpbook-info > *, .person-info > *').forEach(el => {
