@@ -1255,6 +1255,12 @@
             border-left: 4px solid #d0d0d0;
             padding: 12px 16px;
             margin: 16px 0;
+            /* 行距/字距放在外层容器，内层 <p> 不写。
+               微信公众号编辑器的行间距/字间距工具是写在最外层段落元素上的，
+               内层元素只要自带 line-height / letter-spacing 就会盖掉它，
+               表现为"在微信里调了没反应、保存后恢复原样"。 */
+            line-height: 1.85;
+            letter-spacing: 0.7px;
         }
 
         .wx-content .quote-para {
@@ -1263,8 +1269,11 @@
             color: #888888;
             font-family: 宋体, SimSun, serif;
             font-size: 14px;
-            line-height: 1.85;
-            letter-spacing: 0.05em;
+            /* 显式 inherit：既盖掉 .wx-content p 的 2em，
+               也盖掉公众号编辑器对裸 <p> 可能有的自带行距，
+               同时让外层 .quote-text 上的调整能传下来 */
+            line-height: inherit;
+            letter-spacing: inherit;
         }
 
         .wx-content .quote-cite {
@@ -1273,8 +1282,8 @@
             color: #888888;
             font-family: 宋体, SimSun, serif;
             font-size: 14px;
-            line-height: 1.85;
-            letter-spacing: 0.05em;
+            line-height: inherit;
+            letter-spacing: inherit;
             text-align: right;
         }
 
@@ -2557,7 +2566,7 @@
         // 处理 <blockquote> → 外层 section（边框）+ 内层 p（文字）的微信引用块
         html = html.replace(/<blockquote>([\s\S]*?)<\/blockquote>/g, function(match, content) {
             const blankLine = '<section style="line-height:1em;margin:0 8px;"><p style="font-size:11pt;font-family:宋体,SimSun,serif;"><br/></p></section>';
-            const paraStyle = 'margin:0;padding:0;color:#888888;font-family:宋体,SimSun,serif;font-size:14px;line-height:1.85;letter-spacing:0.05em;';
+            const paraStyle = 'margin:0;padding:0;color:#888888;font-family:宋体,SimSun,serif;font-size:14px;line-height:inherit;letter-spacing:inherit;';
             const citeStyle = paraStyle + 'text-align:right;margin-top:6px;';
             // 引文署名行：单独一行以 -- / --- / — / —— 开头 → 右对齐，并统一成中文破折号。
             // HTML 会把连续空格折叠成一个，靠手打空格推不动位置，所以给它一个固定写法。
@@ -2599,7 +2608,7 @@
                 inner = renderQuoteParagraph(inner);
             }
             return blankLine +
-                   '<section class="quote-text" style="border-left:4px solid #d0d0d0;padding:12px 16px;margin:16px 0;">' + inner + '</section>' +
+                   '<section class="quote-text" style="border-left:4px solid #d0d0d0;padding:12px 16px;margin:16px 0;line-height:1.85;letter-spacing:0.7px;">' + inner + '</section>' +
                    blankLine;
         });
 
@@ -3144,17 +3153,19 @@
         clone.querySelectorAll('.quote-text').forEach(el => {
             el.setAttribute(
                 'style',
-                'border-left: 4px solid #d0d0d0; padding: 12px 16px; margin: 16px 0; box-sizing: border-box;'
+                'border-left: 4px solid #d0d0d0; padding: 12px 16px; margin: 16px 0; box-sizing: border-box; line-height: 1.85; letter-spacing: 0.7px;'
             );
         });
 
         // 引用块内部段落：只带文字样式，不带边框。
         // 公众号编辑器里回车会克隆当前块元素的属性再切分，
         // 边框留在外层 section 上，回车才不会复制出第二个引用框。
+        // 内层只留字号/颜色/字体：行距和字距留在外层 .quote-text 上，
+        // 这样在公众号编辑器里选中引文调行间距/字间距才能覆盖生效
         clone.querySelectorAll('.quote-text > p, .quote-para').forEach(el => {
             el.setAttribute(
                 'style',
-                'margin: 0px; padding: 0px; box-sizing: border-box; color: #888888; font-family: 宋体, SimSun, serif; font-size: 14px; line-height: 1.85; letter-spacing: 0.05em;'
+                'margin: 0px; padding: 0px; box-sizing: border-box; color: #888888; font-family: 宋体, SimSun, serif; font-size: 14px; line-height: inherit; letter-spacing: inherit;'
             );
         });
 
@@ -3162,7 +3173,7 @@
         clone.querySelectorAll('.quote-cite').forEach(el => {
             el.setAttribute(
                 'style',
-                'margin: 6px 0px 0px; padding: 0px; box-sizing: border-box; color: #888888; font-family: 宋体, SimSun, serif; font-size: 14px; line-height: 1.85; letter-spacing: 0.05em; text-align: right;'
+                'margin: 6px 0px 0px; padding: 0px; box-sizing: border-box; color: #888888; font-family: 宋体, SimSun, serif; font-size: 14px; line-height: inherit; letter-spacing: inherit; text-align: right;'
             );
             el.setAttribute('align', 'right');
         });
