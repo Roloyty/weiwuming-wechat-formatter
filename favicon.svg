@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="谓无名">
+  <defs>
+    <linearGradient id="seal" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#c65a50"/>
+      <stop offset="0.58" stop-color="#b8453c"/>
+      <stop offset="1" stop-color="#9c362e"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="12" fill="url(#seal)"/>
+  <rect x="7" y="7" width="50" height="50" rx="9" fill="none" stroke="#fff" stroke-opacity="0.48" stroke-width="2"/>
+  <text x="32" y="44" text-anchor="middle" fill="#fff" font-family="Noto Serif SC, Source Han Serif SC, Songti SC, SimSun, serif" font-size="38" font-weight="700">谓</text>
+</svg>

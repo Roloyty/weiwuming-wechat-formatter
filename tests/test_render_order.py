@@ -91,8 +91,44 @@ class RenderOrderTests(unittest.TestCase):
             self.assertIn('width: auto; height: auto; max-width: 100%', rendered)
             self.assertIn('class="bracket-note"', rendered)
             self.assertIn('color: #b2b2b2', rendered)
+            self.assertIn('class="divider-rule"', rendered)
+            self.assertIn('class="divider-gap"', rendered)
+            self.assertNotIn('class="divider-line"', rendered)
             self.assertIn('id="copyBtn"', preview)
             self.assertIn("ClipboardItem", preview)
+
+    def test_quote_keeps_one_gap_on_each_side_without_extra_margin(self):
+        body = "正文前。\n\n> 引文内容。\n\n正文后。\n\n"
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "article.md"
+            source.write_text(
+                EDITOR_NOTE + body + NOTE + AUTHOR + READING + FOOTER,
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                ["node", str(RENDERER), str(source), "--editor", str(EDITOR)],
+                encoding="utf-8",
+                errors="replace",
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+            rendered = source.with_suffix(".html").read_text(encoding="utf-8")
+            quote_region = rendered[
+                rendered.index("正文前。"):rendered.index("正文后。")
+            ]
+            self.assertEqual(quote_region.count('class="para-gap"'), 2)
+            self.assertIn('class="quote-text"', quote_region)
+            self.assertIn("margin: 0px", quote_region)
+            self.assertNotIn("margin: 16px 0", quote_region)
+
+    def test_root_editor_matches_the_skill_snapshot(self):
+        self.assertEqual((ROOT / "index.html").read_bytes(), EDITOR.read_bytes())
+        self.assertEqual(
+            (ROOT / "favicon.svg").read_bytes(),
+            (ROOT / "assets" / "favicon.svg").read_bytes(),
+        )
 
     def test_accepts_movie_director_writer_time_and_runtime(self):
         card = (
