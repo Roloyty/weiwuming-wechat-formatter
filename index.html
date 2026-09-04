@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>谓无名 · 微信排版工作台</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260829">
+    <link rel="shortcut icon" href="./favicon.svg?v=20260829">
     <script src="vendor/marked.min.js"></script>
     <style>
         :root {
@@ -809,31 +811,46 @@
         }
 
         /* ===== 分割线（点线 + 圆点 + 点线） ===== */
+        /* 虚线本体画在 .divider-rule 的 border-top 上：容器是块级元素，宽度为 auto，
+           因此浏览器手动选中复制时不会把宽度固化成预览区的像素值。
+           圆点用固定宽度的白底 .divider-gap 盖住虚线，形成中间断口。 */
         .wx-content .divider {
              margin: 12px 0;
-             width: 100%;
-             display: flex;
-             justify-content: center;
-             align-items: center;
-             box-sizing: border-box;
+             font-size: 0;
+             line-height: 0;
         }
 
-        .wx-content .divider .divider-line {
-            flex: 1;
-            height: 1px;
+        .wx-content .divider .divider-rule {
+            height: 0;
+            font-size: 0;
+            line-height: 0;
+            overflow: hidden;
             border-top: 1px dotted #999999;
         }
 
-        .wx-content .divider .divider-dot {
-            margin: 0 8px;
-            width: 10px;
+        .wx-content .divider .divider-gap {
+            width: 26px;
             height: 10px;
-            background-color: #999999;
-            border-radius: 50%;
-            flex-shrink: 0;
+            margin: -6px auto 0;
+            font-size: 0;
+            line-height: 0;
+            text-align: center;
+            background-color: #ffffff;
         }
 
-        .wx-content .divider .divider-line p,
+        .wx-content .divider .divider-dot {
+            display: inline-block;
+            vertical-align: top;
+            width: 10px;
+            height: 10px;
+            font-size: 0;
+            line-height: 0;
+            background-color: #999999;
+            border-radius: 50%;
+        }
+
+        .wx-content .divider .divider-rule p,
+        .wx-content .divider .divider-gap p,
         .wx-content .divider .divider-dot p {
             margin: 0;
             padding: 0;
@@ -1254,7 +1271,8 @@
         .wx-content .quote-text {
             border-left: 4px solid #d0d0d0;
             padding: 12px 16px;
-            margin: 16px 0;
+            /* 块间空白由相邻的 para-gap 提供，引用自身不再叠加外边距。 */
+            margin: 0;
             /* 行距/字距放在外层容器，内层 <p> 不写。
                微信公众号编辑器的行间距/字间距工具是写在最外层段落元素上的，
                内层元素只要自带 line-height / letter-spacing 就会盖掉它，
@@ -2507,7 +2525,7 @@
 
             // ---[dot] 点线分割线
             if (line.trim() === '---[dot]' || line.trim() === '--- [dot]') {
-                result.push('<section class="divider"><section class="divider-line"><p><br /></p></section><section class="divider-dot"><p><br /></p></section><section class="divider-line"><p><br /></p></section></section>');
+                result.push('<section class="divider"><section class="divider-rule"><p><br /></p></section><section class="divider-gap"><section class="divider-dot"><p><br /></p></section></section></section>');
                 continue;
             }
 
@@ -2515,7 +2533,7 @@
             if (line.trim() === '---[toc]' || line.trim() === '--- [toc]') {
                 inTocSection = true;
                 result.push('<p class="toc-title">目 录</p>');
-                result.push('<section class="divider"><section class="divider-line"><p><br /></p></section><section class="divider-dot"><p><br /></p></section><section class="divider-line"><p><br /></p></section></section>');
+                result.push('<section class="divider"><section class="divider-rule"><p><br /></p></section><section class="divider-gap"><section class="divider-dot"><p><br /></p></section></section></section>');
                 result.push('<section class="toc-scroll">');
                 continue;
             }
@@ -2703,7 +2721,7 @@
                 inBioSection = true;
                 result.push('<section class="bio-section">');
                 result.push('<p class="bio-title">' + bioTitleMatch[1] + '</p>');
-                result.push('<section class="divider"><section class="divider-line"><p><br /></p></section><section class="divider-dot"><p><br /></p></section><section class="divider-line"><p><br /></p></section></section>');
+                result.push('<section class="divider"><section class="divider-rule"><p><br /></p></section><section class="divider-gap"><section class="divider-dot"><p><br /></p></section></section></section>');
                 continue;
             }
 
@@ -2742,7 +2760,7 @@
             let readingBookMatch = line.trim().match(/^\[reading-book:([^|]*)\|([^|]*)(?:\|([^|]*))?(?:\|([^\]]*))?\]$/);
             if (readingBookMatch && inReadingSection) {
                 result.push('<p class="reading-book-title">《' + readingBookMatch[1] + '》</p>');
-                result.push('<section class="divider"><section class="divider-line"><p><br /></p></section><section class="divider-dot"><p><br /></p></section><section class="divider-line"><p><br /></p></section></section>');
+                result.push('<section class="divider"><section class="divider-rule"><p><br /></p></section><section class="divider-gap"><section class="divider-dot"><p><br /></p></section></section></section>');
                 result.push('<p class="reading-meta">' + readingBookMatch[2] + '</p>');
                 if (readingBookMatch[3]) {
                     result.push('<p class="reading-meta">' + readingBookMatch[3] + '</p>');
@@ -2755,7 +2773,7 @@
             let readingEnbookMatch = line.trim().match(/^\[reading-enbook:([^|]*)\|([^|]*)\|([^|]*)\|([^\]]*)\]$/);
             if (readingEnbookMatch && inReadingSection) {
                 result.push('<p class="reading-enbook-title">' + readingEnbookMatch[1] + '</p>');
-                result.push('<section class="divider"><section class="divider-line"><p><br /></p></section><section class="divider-dot"><p><br /></p></section><section class="divider-line"><p><br /></p></section></section>');
+                result.push('<section class="divider"><section class="divider-rule"><p><br /></p></section><section class="divider-gap"><section class="divider-dot"><p><br /></p></section></section></section>');
                 result.push('<p class="reading-meta">' + readingEnbookMatch[2] + '</p>');
                 result.push('<p class="reading-meta">' + readingEnbookMatch[3] + '</p>');
                 result.push('<p class="reading-cover">' + renderBookCoverImg(readingEnbookMatch[4], readingEnbookMatch[1]) + '</p>');
@@ -2766,7 +2784,7 @@
             let readingJpbookMatch = line.trim().match(/^\[reading-jpbook:([^|]*)\|([^|]*)\|([^|]*)\|([^\]]*)\]$/);
             if (readingJpbookMatch && inReadingSection) {
                 result.push('<p class="reading-jpbook-title">『' + readingJpbookMatch[1] + '』</p>');
-                result.push('<section class="divider"><section class="divider-line"><p><br /></p></section><section class="divider-dot"><p><br /></p></section><section class="divider-line"><p><br /></p></section></section>');
+                result.push('<section class="divider"><section class="divider-rule"><p><br /></p></section><section class="divider-gap"><section class="divider-dot"><p><br /></p></section></section></section>');
                 result.push('<p class="reading-meta">' + readingJpbookMatch[2] + '</p>');
                 result.push('<p class="reading-meta">' + readingJpbookMatch[3] + '</p>');
                 result.push('<p class="reading-cover">' + renderBookCoverImg(readingJpbookMatch[4], readingJpbookMatch[1]) + '</p>');
@@ -2923,7 +2941,7 @@
 
         // 处理 <hr> → 替换为点线分割线
         html = html.replace(/<hr\s*\/?>/g,
-            '<section class="divider"><section class="divider-line"><p><br /></p></section><section class="divider-dot"><p><br /></p></section><section class="divider-line"><p><br /></p></section></section>');
+            '<section class="divider"><section class="divider-rule"><p><br /></p></section><section class="divider-gap"><section class="divider-dot"><p><br /></p></section></section></section>');
 
         // 处理以 ・ 开头的列表项为尾注格式（12px灰色）
         html = html.replace(/<li>\s*・\s*(.*?)<\/li>/g,
@@ -2977,8 +2995,8 @@
             } else {
                 inner = renderQuoteParagraph(inner);
             }
-            return blankLine +
-                   '<section class="quote-text" style="border-left:4px solid #d0d0d0;padding:12px 16px;margin:16px 0;line-height:1.85;letter-spacing:0.7px;">' + inner + '</section>' +
+            // 前一个正文块已经带一个 para-gap；引用只补末尾空行，避免前方出现双倍间距。
+            return '<section class="quote-text" style="border-left:4px solid #d0d0d0;padding:12px 16px;margin:0;line-height:1.85;letter-spacing:0.7px;">' + inner + '</section>' +
                    blankLine;
         });
 
@@ -3256,7 +3274,7 @@
         });
 
         // 普通正文段落 section
-        clone.querySelectorAll('section:not(.editor-note-wrapper):not(.editor-note):not(.editor-note-inner):not(.editor-note-label):not(.note-para):not(.dot-decoration):not(.book-cover):not(.book-info):not(.book-marker):not(.enbook-info):not(.enbook-cover):not(.enbook-marker):not(.jpbook-info):not(.jpbook-cover):not(.jpbook-marker):not(.quote-text):not(.person-info):not(.person-photo):not(.person-marker):not(.person-bio):not(.section-title):not(.divider):not(.divider-line):not(.divider-dot):not(.notes-section):not(.notes-scroll):not(.toc-scroll):not(.footnote-item):not(.end-notes):not(._135editor)').forEach(el => {
+        clone.querySelectorAll('section:not(.editor-note-wrapper):not(.editor-note):not(.editor-note-inner):not(.editor-note-label):not(.note-para):not(.dot-decoration):not(.book-cover):not(.book-info):not(.book-marker):not(.enbook-info):not(.enbook-cover):not(.enbook-marker):not(.jpbook-info):not(.jpbook-cover):not(.jpbook-marker):not(.quote-text):not(.person-info):not(.person-photo):not(.person-marker):not(.person-bio):not(.section-title):not(.divider):not(.divider-rule):not(.divider-gap):not(.divider-dot):not(.notes-section):not(.notes-scroll):not(.toc-scroll):not(.footnote-item):not(.end-notes):not(._135editor)').forEach(el => {
             if (!el.getAttribute('style') || el.innerHTML.includes('<span')) {
                 el.setAttribute(
                     'style',
@@ -3536,7 +3554,7 @@
         clone.querySelectorAll('.quote-text').forEach(el => {
             el.setAttribute(
                 'style',
-                'border-left: 4px solid #d0d0d0; padding: 12px 16px; margin: 16px 0; box-sizing: border-box; line-height: 1.85; letter-spacing: 0.7px;'
+                'border-left: 4px solid #d0d0d0; padding: 12px 16px; margin: 0px; box-sizing: border-box; line-height: 1.85; letter-spacing: 0.7px;'
             );
         });
 
@@ -3641,21 +3659,28 @@
         clone.querySelectorAll('.divider').forEach(el => {
             el.setAttribute(
                 'style',
-                'margin: 12px 0px; padding: 0px; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: #000000; font-size: 15px; background-color: #ffffff; font-family: 宋体, SimSun, serif;'
+                'margin: 12px 0px; padding: 0px; box-sizing: border-box; font-size: 0px; line-height: 0; color: #000000; background-color: #ffffff; font-family: 宋体, SimSun, serif;'
             );
         });
 
-        clone.querySelectorAll('.divider-line').forEach(el => {
+        clone.querySelectorAll('.divider-rule').forEach(el => {
             el.setAttribute(
                 'style',
-                'margin: 0px; padding: 0px; flex: 1; height: 1px; border-top: 1px dotted #999999; box-sizing: border-box;'
+                'margin: 0px; padding: 0px; height: 0px; font-size: 0px; line-height: 0; overflow: hidden; border-top: 1px dotted #999999; box-sizing: border-box;'
+            );
+        });
+
+        clone.querySelectorAll('.divider-gap').forEach(el => {
+            el.setAttribute(
+                'style',
+                'margin: -6px auto 0px; padding: 0px; width: 26px; height: 10px; font-size: 0px; line-height: 0; text-align: center; background-color: #ffffff; box-sizing: border-box;'
             );
         });
 
         clone.querySelectorAll('.divider-dot').forEach(el => {
             el.setAttribute(
                 'style',
-                'margin: 0px 8px; padding: 0px; width: 10px; height: 10px; background-color: #999999; border-radius: 50%; box-sizing: border-box; flex-shrink: 0;'
+                'margin: 0px; padding: 0px; display: inline-block; vertical-align: top; width: 10px; height: 10px; font-size: 0px; line-height: 0; background-color: #999999; border-radius: 50%; box-sizing: border-box;'
             );
         });
 
