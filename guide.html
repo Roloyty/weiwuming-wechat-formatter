@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>使用说明 · 谓无名排版工作台</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+    :root {
+        --ink: #232a33;
+        --ink-soft: #5a6470;
+        --utility: #939aa4;
+        --paper: #f4f2ec;
+        --desk: #e7e3d8;
+        --sheet: #ffffff;
+        --seal: #b8453c;
+        --azure: #3daad6;
+        --azure-deep: #2b8fb8;
+        --gold: #c9a86a;
+        --rule: #ddd8cb;
+        --rule-soft: #eae6da;
+        --shadow-soft: 0 1px 2px rgba(27, 33, 41, .05), 0 8px 24px rgba(27, 33, 41, .07);
+        --ui-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", "宋体", serif;
+        --ui-sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+        --ui-mono: "JetBrains Mono", "Sarasa Mono SC", "Fira Code", Consolas, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--ui-sans);
+        line-height: 1.75;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* 顶栏沿用工作台的视觉 */
+    .toolbar {
+        background: linear-gradient(180deg, #2a323d 0%, var(--ink) 100%);
+        border-bottom: 1px solid rgba(0, 0, 0, .35);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 6px 18px rgba(27, 33, 41, .18);
+        padding: 10px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .toolbar-title { display: flex; align-items: center; gap: 10px; }
+
+    .seal {
+        width: 26px; height: 26px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--seal);
+        color: #fff;
+        font-family: var(--ui-serif);
+        font-size: 15px;
+        border-radius: 3px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+    }
+
+    .wordmark {
+        font-family: var(--ui-serif);
+        font-size: 17px;
+        letter-spacing: 2px;
+        color: #f2efe6;
+    }
+
+    .wordmark-sub {
+        font-size: 12px;
+        letter-spacing: 1px;
+        color: var(--utility);
+        margin-left: 10px;
+    }
+
+    .btn-back {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 14px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, .18);
+        background: rgba(255, 255, 255, .06);
+        color: #e8e4d9;
+        font-size: 13px;
+        text-decoration: none;
+        transition: background .15s;
+    }
+    .btn-back:hover { background: rgba(255, 255, 255, .13); }
+
+    .wrap {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+    }
+
+    .lede {
+        font-family: var(--ui-serif);
+        font-size: 15px;
+        color: var(--ink-soft);
+        border-left: 3px solid var(--gold);
+        padding-left: 14px;
+        margin: 0 0 32px;
+    }
+
+    h1 {
+        font-family: var(--ui-serif);
+        font-size: 28px;
+        letter-spacing: 1px;
+        margin: 0 0 10px;
+    }
+
+    h2 {
+        font-family: var(--ui-serif);
+        font-size: 20px;
+        letter-spacing: 1px;
+        margin: 44px 0 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--rule);
+    }
+
+    h3 {
+        font-size: 15px;
+        margin: 26px 0 8px;
+    }
+
+    p { margin: 10px 0; }
+
+    a { color: var(--azure-deep); }
+
+    code {
+        font-family: var(--ui-mono);
+        font-size: 12.5px;
+        background: var(--desk);
+        border: 1px solid var(--rule-soft);
+        border-radius: 3px;
+        padding: 1px 5px;
+    }
+
+    pre {
+        background: #2d333b;
+        color: #d6dbe1;
+        border-radius: 5px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        font-family: var(--ui-mono);
+        font-size: 12.5px;
+        line-height: 1.7;
+        margin: 12px 0;
+    }
+    pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0;
+        font-size: 14px;
+        background: var(--sheet);
+        box-shadow: var(--shadow-soft);
+    }
+    th, td {
+        border: 1px solid var(--rule);
+        padding: 9px 12px;
+        text-align: left;
+        vertical-align: top;
+    }
+    th { background: var(--desk); font-weight: 600; }
+
+    .tablewrap { overflow-x: auto; }
+
+    ul, ol { padding-left: 22px; margin: 10px 0; }
+    li { margin: 5px 0; }
+
+    .note {
+        background: var(--sheet);
+        border: 1px solid var(--rule);
+        border-left: 3px solid var(--azure);
+        border-radius: 0 4px 4px 0;
+        padding: 12px 16px;
+        margin: 16px 0;
+        font-size: 14px;
+        box-shadow: var(--shadow-soft);
+    }
+    .note.warn { border-left-color: var(--seal); }
+    .note strong { font-family: var(--ui-serif); letter-spacing: .5px; }
+
+    .steps { counter-reset: step; list-style: none; padding-left: 0; }
+    .steps > li {
+        counter-increment: step;
+        position: relative;
+        padding-left: 34px;
+        margin: 14px 0;
+    }
+    .steps > li::before {
+        content: counter(step);
+        position: absolute;
+        left: 0; top: 3px;
+        width: 22px; height: 22px;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--ink);
+        color: #f2efe6;
+        border-radius: 50%;
+        font-size: 12px;
+        font-family: var(--ui-mono);
+    }
+
+    .toc {
+        background: var(--sheet);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 16px 20px;
+        box-shadow: var(--shadow-soft);
+    }
+    .toc strong { font-family: var(--ui-serif); letter-spacing: 1px; display: block; margin-bottom: 8px; }
+    .toc ol { margin: 0; }
+    .toc a { text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    footer {
+        margin-top: 56px;
+        padding-top: 18px;
+        border-top: 1px solid var(--rule);
+        font-size: 13px;
+        color: var(--utility);
+    }
+
+    @media (max-width: 640px) {
+        .wrap { padding: 28px 16px 60px; }
+        .wordmark-sub { display: none; }
+        h1 { font-size: 23px; }
+    }
+</style>
+</head>
+<body>
+
+<header class="toolbar">
+    <div class="toolbar-title">
+        <span class="seal" aria-hidden="true">谓</span>
+        <span class="wordmark">谓无名<span class="wordmark-sub">使用说明</span></span>
+    </div>
+    <a class="btn-back" href="index.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        返回工作台
+    </a>
+</header>
+
+<div class="wrap">
+
+<h1>使用说明</h1>
+<p class="lede">「谓无名」排版工具由两部分组成：一个是你正在用的<strong>在线排版工作台</strong>，打开即用、不需要任何安装；另一个是配套的 <strong>AI Agent Skill</strong>，让 Claude Code、Codex、Gemini 这类 Agent 能把 Word 文档直接转成公众号排版。本页讲后者怎么装，以及图片上传所依赖的 PicGo 图床怎么配。</p>
+
+<div class="toc">
+    <strong>目录</strong>
+    <ol>
+        <li><a href="#part1">在线工作台：直接用</a></li>
+        <li><a href="#part2">安装 Skill：Claude Code / Codex / Gemini</a></li>
+        <li><a href="#part3">配置 PicGo 图床</a></li>
+        <li><a href="#part4">常见问题</a></li>
+    </ol>
+</div>
+
+<h2 id="part1">一、在线工作台：直接用</h2>
+
+<p>工作台是纯前端页面，不上传、不存储任何文稿，所有排版都在你自己的浏览器里完成。</p>
+
+<div class="tablewrap">
+<table>
+    <tr><th style="width:26%">操作</th><th>方式</th></tr>
+    <tr><td>写稿</td><td>左侧输入 Markdown + 谓无名自定义语法</td></tr>
+    <tr><td>预览</td><td>右侧实时显示手机端效果</td></tr>
+    <tr><td>复制</td><td>点右上「复制排版结果」或按 <code>Ctrl+Enter</code>，直接粘进公众号后台</td></tr>
+    <tr><td>查语法</td><td>点「语法手册」展开完整语法参考</td></tr>
+    <tr><td>调排版</td><td>左上「排版微调」面板，分正文 / 引文 / 图注三组，可改字体、字号、行距、字距</td></tr>
+</table>
+</div>
+
+<div class="note">
+    <strong>只是想排个版？</strong> 那到这里就够了，下面两节都不用看。Skill 和图床是给「让 AI 自动处理整篇 Word 稿」这个场景准备的。
+</div>
+
+<h2 id="part2">二、安装 Skill</h2>
+
+<p>Skill 就是一个装着说明书和脚本的文件夹。三家 Agent 的机制一样：<strong>各自有一个 <code>skills</code> 目录，把仓库克隆进去就算装好，重启 Agent 后自动识别。</strong></p>
+
+<h3>1. 先备好依赖</h3>
+
+<ul>
+    <li><strong>Python 3.9+</strong> —— 脚本只用标准库，不需要 pip 装东西</li>
+    <li><strong>Node.js 18+</strong> —— 渲染微信 HTML 用</li>
+    <li><strong>LibreOffice</strong> —— 可选，只有处理老式 <code>.doc</code> 时才需要</li>
+</ul>
+
+<h3>2. 克隆到对应目录</h3>
+
+<p>按你用的 Agent 选一条。<code>~</code> 在 Windows 下就是 <code>C:\Users\你的用户名</code>。</p>
+
+<div class="tablewrap">
+<table>
+    <tr><th style="width:22%">Agent</th><th>Skill 目录</th></tr>
+    <tr><td>Claude Code</td><td><code>~/.claude/skills/</code></td></tr>
+    <tr><td>Codex</td><td><code>~/.codex/skills/</code></td></tr>
+    <tr><td>Gemini CLI</td><td><code>~/.gemini/skills/</code></td></tr>
+</table>
+</div>
+
+<p>以 Claude Code 为例，换成上表里其它路径即可：</p>
+
+<pre><code>git clone https://github.com/Roloyty/weiwuming-wechat-formatter.git \
+  ~/.claude/skills/weiwuming-wechat-formatter</code></pre>
+
+<p>Windows PowerShell：</p>
+
+<pre><code>git clone https://github.com/Roloyty/weiwuming-wechat-formatter.git `
+  "$env:USERPROFILE\.claude\skills\weiwuming-wechat-formatter"</code></pre>
+
+<h3>3. 装 Node 依赖</h3>
+
+<pre><code>cd ~/.claude/skills/weiwuming-wechat-formatter
+npm ci</code></pre>
+
+<div class="note">
+    <strong>装好长什么样。</strong> 目录里应该直接能看到 <code>SKILL.md</code>、<code>scripts/</code>、<code>assets/</code>、<code>references/</code>。<code>SKILL.md</code> 是 Agent 读的说明书，必须在这个文件夹的最外层 —— 如果不小心多套了一层目录，Agent 就找不到它。
+</div>
+
+<h3>4. 只想装到某个项目</h3>
+
+<p>三家都支持项目级 Skill：把上面的路径换成项目根目录下的 <code>.claude/skills/</code>、<code>.codex/skills/</code> 或 <code>.gemini/skills/</code>，作用范围就只限该项目。</p>
+
+<h3>5. 更新</h3>
+
+<pre><code>cd ~/.claude/skills/weiwuming-wechat-formatter
+git pull
+npm ci</code></pre>
+
+<h3>6. 怎么用</h3>
+
+<p>装好后不用背命令，直接对 Agent 说人话，它会自己去读 Skill：</p>
+
+<pre><code>把这份 Word 转成公众号排版：D:\稿件\书评.docx</code></pre>
+
+<p>Agent 会依次完成：提取 Word 结构 → 生成谓无名 Markdown → 本地图片传图床换成公网链接 → 渲染出可直接粘贴的微信 HTML，并校验模块顺序、语法配对这些容易出错的地方。</p>
+
+<h2 id="part3">三、配置 PicGo 图床</h2>
+
+<div class="note warn">
+    <strong>为什么必须配。</strong> Word 里的图片是文档包内部路径（<code>word/media/image1.png</code>），这种本地路径微信服务器抓不到，直接粘进公众号就是一片图裂。所以图片得先传到公网可访问的地方，换成 <code>https://</code> 开头的链接 —— 这件事由 PicGo 代劳。
+</div>
+
+<p>本项目<strong>不绑定任何具体图床，也不保存你的 AK、SK、Token 或 Bucket</strong>。图床凭据只存在 PicGo 自己的配置里，脚本只负责把图片递给 PicGo。用哪家图床由你在 PicGo 里决定。</p>
+
+<h3>1. 装 PicGo 并选好图床</h3>
+
+<ol class="steps">
+    <li>安装 <a href="https://picgo.github.io/PicGo-Doc/" target="_blank" rel="noopener">PicGo GUI</a> 2.2 及以上版本。</li>
+    <li>在 PicGo 里配置你自己的图床（GitHub、S3、阿里云 OSS、腾讯云 COS 等都行），填好各自的凭据。</li>
+    <li><strong>把它设为「当前图床」</strong> —— 这步最容易漏，配了但没选中，上传照样失败。</li>
+    <li>打开 PicGo 的 <strong>Server 设置</strong>，确认服务已启动，默认监听 <code>http://127.0.0.1:36677</code>。</li>
+</ol>
+
+<h3>2. 验证连通</h3>
+
+<p>默认地址开箱即用，不用改任何配置。先检查一下：</p>
+
+<pre><code>python scripts/upload_image.py --check</code></pre>
+
+<p>正常会打印 PicGo Server 可用和缓存文件位置。</p>
+
+<h3>3. 改过默认地址才需要配</h3>
+
+<p>如果你改过 PicGo Server 的端口或设了密钥，建 <code>~/.weiwuming/image-host.json</code>：</p>
+
+<pre><code>{
+  "picgo": {
+    "api_url": "http://127.0.0.1:36677/upload",
+    "server_secret": "",
+    "timeout": 90
+  }
+}</code></pre>
+
+<p>也可以用环境变量，优先级高于配置文件：</p>
+
+<pre><code>PICGO_API_URL=http://127.0.0.1:36677/upload
+PICGO_SERVER_SECRET=可选的服务密钥
+PICGO_TIMEOUT=90</code></pre>
+
+<h3>4. 手动传图</h3>
+
+<pre><code>python scripts/upload_image.py images/cover.jpg
+python scripts/upload_image.py --json images/*.jpg</code></pre>
+
+<p>输出是「本地路径 + 制表符 + 公网 URL」。同一张图重复传不会真的重复上传 —— 脚本按内容哈希在 <code>~/.weiwuming/picgo-upload-cache.json</code> 里做了幂等缓存，反复重排同一篇稿子不会把图床刷爆。</p>
+
+<h3>5. PicGo Core 命令行版</h3>
+
+<p>如果你用的是命令行版而非 GUI：</p>
+
+<div class="tablewrap">
+<table>
+    <tr><th style="width:46%">命令</th><th>作用</th></tr>
+    <tr><td><code>python scripts/setup_picgo.py --status</code></td><td>查 PicGo CLI 是否装了、什么版本</td></tr>
+    <tr><td><code>python scripts/setup_picgo.py --login</code></td><td>走官方浏览器流程登录 PicGo Cloud</td></tr>
+    <tr><td><code>python scripts/setup_picgo.py --configure-uploader</code></td><td>配置 GitHub / S3 / OSS / COS 等第三方图床凭据</td></tr>
+</table>
+</div>
+
+<div class="note">
+    <strong>关于登录。</strong> <code>--login</code> 只负责 PicGo Cloud 自身的登录，token 由 PicGo 保存，本项目不读取。第三方图床仍要单独配凭据。另外还有个 <code>--sync-config</code> 会调用官方云配置同步，可能上传你的本地配置并要求解决冲突，所以不会自动执行，需要你手动调用。
+</div>
+
+<h3>6. 安全</h3>
+
+<ul>
+    <li>PicGo Server 建议只监听 <code>127.0.0.1</code>。若要监听局域网地址，请启用 shared secret 并加防火墙限制。</li>
+    <li>图床凭据只留在 PicGo 配置里，不要提交进任何仓库。</li>
+    <li>上传后的图片通常公网可访问，<strong>不要传隐私或未公开的资料</strong>。</li>
+</ul>
+
+<h2 id="part4">四、常见问题</h2>
+
+<div class="tablewrap">
+<table>
+    <tr><th style="width:38%">现象</th><th>原因与处理</th></tr>
+    <tr>
+        <td>Agent 说找不到这个 Skill</td>
+        <td>确认 <code>SKILL.md</code> 在 skill 文件夹最外层、没多套一层目录，然后重启 Agent</td>
+    </tr>
+    <tr>
+        <td>上传报「图床未配置」（退出码 2）</td>
+        <td>PicGo 里没选中当前图床，或 Server 没启动。先跑 <code>--check</code> 确认</td>
+    </tr>
+    <tr>
+        <td>粘进公众号后图片全裂</td>
+        <td>说明图片还是本地路径。检查稿子里的图片链接是不是 <code>https://</code> 开头</td>
+    </tr>
+    <tr>
+        <td>渲染被拒绝，提示模块顺序错</td>
+        <td>文章有固定顺序：编者按 → 正文 → 目录 → 注释 → <code>---[note]</code> → 作者简介 → 译者简介 → 延伸阅读 → 两条 staff → 关注区。编者按必须是第一个非空内容，上方不能放标题</td>
+    </tr>
+    <tr>
+        <td>粘进公众号后行距、字距变了</td>
+        <td>公众号编辑器会吃掉部分内联样式。工作台已把行距字距挂在卡片最外层来规避，若仍有出入，用「排版微调」面板改完再复制</td>
+    </tr>
+    <tr>
+        <td><code>npm ci</code> 失败</td>
+        <td>确认 Node 18+，并且是在 skill 文件夹里执行的</td>
+    </tr>
+</table>
+</div>
+
+<footer>
+    源码与完整文档：<a href="https://github.com/Roloyty/weiwuming-wechat-formatter" target="_blank" rel="noopener">github.com/Roloyty/weiwuming-wechat-formatter</a> · MIT License
+</footer>
+
+</div>
+</body>
+</html>
