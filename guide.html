@@ -114,6 +114,7 @@
     }
 
     h2 {
+        scroll-margin-top: 80px;
         font-family: var(--ui-serif);
         font-size: 20px;
         letter-spacing: 1px;
@@ -151,6 +152,7 @@
         line-height: 1.7;
         margin: 12px 0;
     }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
     pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
 
     table {
@@ -250,255 +252,79 @@
 <div class="wrap">
 
 <h1>使用说明</h1>
-<p class="lede">「谓无名」排版工具由两部分组成：一个是你正在用的<strong>在线排版工作台</strong>，打开即用、不需要任何安装；另一个是配套的 <strong>AI Agent Skill</strong>，让 Claude Code、Codex、Gemini 这类 Agent 能把 Word 文档直接转成公众号排版。本页讲后者怎么装，以及图片上传所依赖的 PicGo 图床怎么配。</p>
+<p class="lede">想自己排版，直接用工作台；想让 AI 帮你处理 Word 文档，跟着下面几步做就好。</p>
 
-<div class="toc">
-    <strong>目录</strong>
+<nav class="toc" aria-label="使用说明目录">
+    <strong>从这里开始</strong>
     <ol>
-        <li><a href="#part1">在线工作台：直接用</a></li>
-        <li><a href="#part2">安装 Skill：Claude Code / Codex / Gemini</a></li>
-        <li><a href="#part3">配置图床：PicGo 或 R2</a></li>
-        <li><a href="#part4">常见问题</a></li>
+        <li><a href="#part1">直接用在线工作台</a></li>
+        <li><a href="#part2">让 AI 帮你排版：下载工具、安装技能</a></li>
+        <li><a href="#part3">文章有图片：准备 PicGo 图床</a></li>
+        <li><a href="#part4">遇到问题怎么办</a></li>
     </ol>
-</div>
+</nav>
 
-<h2 id="part1">一、在线工作台：直接用</h2>
-
-<p>工作台是纯前端页面，不上传、不存储任何文稿，所有排版都在你自己的浏览器里完成。</p>
-
-<div class="tablewrap">
-<table>
-    <tr><th style="width:26%">操作</th><th>方式</th></tr>
-    <tr><td>写稿</td><td>左侧输入 Markdown + 谓无名自定义语法</td></tr>
-    <tr><td>预览</td><td>右侧实时显示手机端效果</td></tr>
-    <tr><td>复制</td><td>点右上「复制排版结果」或按 <code>Ctrl+Enter</code>，直接粘进公众号后台</td></tr>
-    <tr><td>查语法</td><td>点「语法手册」展开完整语法参考</td></tr>
-    <tr><td>调排版</td><td>左上「排版微调」面板，分正文 / 引文 / 图注三组，可改字体、字号、行距、字距</td></tr>
-</table>
-</div>
-
-<div class="note">
-    <strong>只是想排个版？</strong> 那到这里就够了，下面两节都不用看。Skill 和图床是给「让 AI 自动处理整篇 Word 稿」这个场景准备的。
-</div>
-
-<h2 id="part2">二、安装 Skill</h2>
-
-<p>Skill 就是一个装着说明书和脚本的文件夹。三家 Agent 的机制一样：<strong>各自有一个 <code>skills</code> 目录，把仓库克隆进去就算装好，重启 Agent 后自动识别。</strong></p>
-
-<h3>1. 先备好依赖</h3>
-
-<ul>
-    <li><strong>Python 3.9+</strong> —— 脚本只用标准库，不需要 pip 装东西</li>
-    <li><strong>Node.js 18+</strong> —— 渲染微信 HTML 用</li>
-    <li><strong>LibreOffice</strong> —— 可选，只有处理老式 <code>.doc</code> 时才需要</li>
-</ul>
-
-<h3>2. 克隆到对应目录</h3>
-
-<p>按你用的 Agent 选一条。<code>~</code> 在 Windows 下就是 <code>C:\Users\你的用户名</code>。</p>
-
-<div class="tablewrap">
-<table>
-    <tr><th style="width:22%">Agent</th><th>Skill 目录</th></tr>
-    <tr><td>Claude Code</td><td><code>~/.claude/skills/</code></td></tr>
-    <tr><td>Codex</td><td><code>~/.codex/skills/</code></td></tr>
-    <tr><td>Gemini CLI</td><td><code>~/.gemini/skills/</code></td></tr>
-</table>
-</div>
-
-<p>以 Claude Code 为例，换成上表里其它路径即可：</p>
-
-<pre><code>git clone https://github.com/Roloyty/weiwuming-wechat-formatter.git \
-  ~/.claude/skills/weiwuming-wechat-formatter</code></pre>
-
-<p>Windows PowerShell：</p>
-
-<pre><code>git clone https://github.com/Roloyty/weiwuming-wechat-formatter.git `
-  "$env:USERPROFILE\.claude\skills\weiwuming-wechat-formatter"</code></pre>
-
-<h3>3. 装 Node 依赖</h3>
-
-<pre><code>cd ~/.claude/skills/weiwuming-wechat-formatter
-npm ci</code></pre>
-
-<div class="note">
-    <strong>装好长什么样。</strong> 目录里应该直接能看到 <code>SKILL.md</code>、<code>scripts/</code>、<code>assets/</code>、<code>references/</code>。<code>SKILL.md</code> 是 Agent 读的说明书，必须在这个文件夹的最外层 —— 如果不小心多套了一层目录，Agent 就找不到它。
-</div>
-
-<h3>4. 只想装到某个项目</h3>
-
-<p>Claude Code 和 Codex 支持项目级 Skill：把上面的路径换成项目根目录下的 <code>.claude/skills/</code> 或 <code>.codex/skills/</code>，作用范围就只限该项目，适合某个仓库专用的 Skill。</p>
-
-<p>Gemini CLI 这边只验证过全局目录，项目级是否支持请以官方文档为准。</p>
-
-<h3>5. 更新</h3>
-
-<pre><code>cd ~/.claude/skills/weiwuming-wechat-formatter
-git pull
-npm ci</code></pre>
-
-<h3>6. 怎么用</h3>
-
-<p>装好后不用背命令，直接对 Agent 说人话，它会自己去读 Skill：</p>
-
-<pre><code>把这份 Word 转成公众号排版：D:\稿件\书评.docx</code></pre>
-
-<p>Agent 会依次完成：提取 Word 结构 → 生成谓无名 Markdown → 本地图片传图床换成公网链接 → 渲染出可直接粘贴的微信 HTML，并校验模块顺序、语法配对这些容易出错的地方。</p>
-
-<h2 id="part3">三、配置图床</h2>
-
-<div class="note warn">
-    <strong>为什么必须配。</strong> Word 里的图片是文档包内部路径（<code>word/media/image1.png</code>），这种本地路径微信服务器抓不到，直接粘进公众号就是一片图裂。所以图片得先传到公网可访问的地方，换成 <code>https://</code> 开头的链接 —— 这件事由 PicGo 代劳。
-</div>
-
-<p>上传支持两种后端，都传到<strong>你自己的</strong>图床，本项目不提供也不代管任何公共图床：</p>
-
-<div class="tablewrap">
-<table>
-    <tr><th style="width:20%">后端</th><th>说明</th><th style="width:32%">凭据存放</th></tr>
-    <tr><td><code>picgo</code><br>（默认）</td><td>把图片递给你自己的 PicGo Server，用哪家图床由你在 PicGo 里决定</td><td>PicGo 自己的配置，本项目完全不接触</td></tr>
-    <tr><td><code>r2</code><br>（可选）</td><td>S3 兼容接口直传你自己的 Cloudflare R2 存储桶，不必常驻 PicGo GUI</td><td>本地 <code>~/.weiwuming/image-host.json</code> 或环境变量</td></tr>
-</table>
-</div>
-
-<p>后端按此顺序决定：命令行 <code>--backend</code> → 环境变量 <code>WEIWUMING_IMAGE_BACKEND</code> → 配置文件 <code>"backend"</code> 字段 → 自动（R2 五项配全了就用 R2，否则用 PicGo）。<strong>不配 R2 的话行为和以前完全一样</strong>，下面先讲 PicGo。</p>
-
-<h3>1. 装 PicGo 并选好图床</h3>
-
+<h2 id="part1">一、直接用在线工作台</h2>
 <ol class="steps">
-    <li>安装 <a href="https://picgo.github.io/PicGo-Doc/" target="_blank" rel="noopener">PicGo GUI</a> 2.2 及以上版本。</li>
-    <li>在 PicGo 里配置你自己的图床（GitHub、S3、阿里云 OSS、腾讯云 COS 等都行），填好各自的凭据。</li>
-    <li><strong>把它设为「当前图床」</strong> —— 这步最容易漏，配了但没选中，上传照样失败。</li>
-    <li>打开 PicGo 的 <strong>Server 设置</strong>，确认服务已启动，默认监听 <code>http://127.0.0.1:36677</code>。</li>
+    <li>打开<a href="index.html">排版工作台</a>，把文章粘贴到左侧。第一次用，可以点「载入示例」看看。</li>
+    <li>在右侧查看排版效果，需要时用「排版微调」调整字体、字号和行距。</li>
+    <li>点「复制排版结果」，粘贴到微信公众号后台，检查后就可以发布。</li>
 </ol>
+<p>想了解标题、图片等怎么写，点工作台上的「语法手册」。也可以按下面的方法，让 AI 帮你整理。</p>
 
-<h3>2. 验证连通</h3>
-
-<p>默认地址开箱即用，不用改任何配置。先检查一下：</p>
-
-<pre><code>python scripts/upload_image.py --check</code></pre>
-
-<p>正常会打印 PicGo Server 可用和缓存文件位置。</p>
-
-<h3>3. 改过默认地址才需要配</h3>
-
-<p>如果你改过 PicGo Server 的端口或设了密钥，建 <code>~/.weiwuming/image-host.json</code>：</p>
-
-<pre><code>{
-  "picgo": {
-    "api_url": "http://127.0.0.1:36677/upload",
-    "server_secret": "",
-    "timeout": 90
-  }
-}</code></pre>
-
-<p>也可以用环境变量，优先级高于配置文件：</p>
-
-<pre><code>PICGO_API_URL=http://127.0.0.1:36677/upload
-PICGO_SERVER_SECRET=可选的服务密钥
-PICGO_TIMEOUT=90</code></pre>
-
-<h3>4. 手动传图</h3>
-
-<pre><code>python scripts/upload_image.py images/cover.jpg
-python scripts/upload_image.py --json images/*.jpg</code></pre>
-
-<p>输出是「本地路径 + 制表符 + 公网 URL」。同一张图重复传不会真的重复上传 —— 脚本按内容哈希在 <code>~/.weiwuming/picgo-upload-cache.json</code> 里做了幂等缓存，反复重排同一篇稿子不会把图床刷爆。</p>
-
-<h3>5. PicGo Core 命令行版</h3>
-
-<p>如果你用的是命令行版而非 GUI：</p>
-
+<h2 id="part2">二、让 AI 帮你排版</h2>
+<h3>1. 下载一个 AI 助手</h3>
+<p>这类能帮你处理文件、完成任务的 AI 助手，也叫 Agent。下面是常用的国产工具，选一个下载安装并登录即可。</p>
 <div class="tablewrap">
 <table>
-    <tr><th style="width:46%">命令</th><th>作用</th></tr>
-    <tr><td><code>python scripts/setup_picgo.py --status</code></td><td>查 PicGo CLI 是否装了、什么版本</td></tr>
-    <tr><td><code>python scripts/setup_picgo.py --login</code></td><td>走官方浏览器流程登录 PicGo Cloud</td></tr>
-    <tr><td><code>python scripts/setup_picgo.py --configure-uploader</code></td><td>配置 GitHub / S3 / OSS / COS 等第三方图床凭据</td></tr>
+    <thead><tr><th scope="col">工具</th><th scope="col">官方下载入口</th></tr></thead>
+    <tbody>
+        <tr><td>豆包工作</td><td><a href="https://www.doubao.com/work" target="_blank" rel="noopener">下载豆包工作</a></td></tr>
+        <tr><td>千问办公</td><td><a href="https://qwenwork.cn/download" target="_blank" rel="noopener">下载千问办公</a></td></tr>
+        <tr><td>ZCode（智谱）</td><td><a href="https://zcode.z.ai/cn/docs/install" target="_blank" rel="noopener">下载 ZCode</a></td></tr>
+        <tr><td>WorkBuddy（腾讯）</td><td><a href="https://www.workbuddy.cn/work/" target="_blank" rel="noopener">下载 WorkBuddy</a></td></tr>
+    </tbody>
 </table>
 </div>
+<p>已经在用 Claude Code、Codex 等支持 Skills 的工具，也可以继续用。</p>
 
+<h3>2. 把技能链接发给 AI，请它安装</h3>
+<p><strong>Skills 就是给 AI 用的技能包。</strong>在支持安装 Skills 的 AI 工具里，把技能的 GitHub 仓库链接发给它，再说「请帮我安装这个 skills」就行。下载文件、放到哪里、安装所需软件，都可以交给 AI 处理。</p>
+<p>安装本排版技能，直接把下面这段话复制到 AI 的对话框：</p>
+<pre><code>请帮我安装这个 skills：
+https://github.com/Roloyty/weiwuming-wechat-formatter</code></pre>
+<p>等它提示安装完成。如果工具提示不支持直接安装，按它的提示导入技能，或换一个支持 Skills 安装的工具。</p>
+
+<h3>3. 发给 AI 一份 Word 文档</h3>
+<p>把文档拖进对话框，或告诉 AI 文件在电脑里的位置，然后说：</p>
+<pre><code>请用谓无名排版技能，把这份 Word 文档排成公众号文章，保留原文和图片，并打开排版结果让我检查。</code></pre>
+<p>完成后，查看生成的排版页面，按提示复制到公众号后台。想调整哪里，继续告诉 AI 即可。</p>
+
+<h2 id="part3">三、文章有图片：准备 PicGo 图床</h2>
+<p>图床就是<strong>存放图片、生成图片链接的地方</strong>。Word 里有图片时，AI 可以借助 PicGo 上传图片，让排版后的文章正常显示它们。纯文字文章可以跳过这一步。</p>
+<ol class="steps">
+    <li>打开 <a href="https://picgo.app/" target="_blank" rel="noopener">PicGo 官网</a>，下载并安装 Windows 版。</li>
+    <li>打开 PicGo，注册或登录账号，使用自带的 <strong>PicGo Cloud 免费图床</strong>。</li>
+    <li>保持 PicGo 开着，告诉 AI：「我已经登录 PicGo，请帮我检查图片上传，并继续排版。」</li>
+</ol>
 <div class="note">
-    <strong>关于登录。</strong> <code>--login</code> 只负责 PicGo Cloud 自身的登录，token 由 PicGo 保存，本项目不读取。第三方图床仍要单独配凭据。另外还有个 <code>--sync-config</code> 会调用官方云配置同步，可能上传你的本地配置并要求解决冲突，所以不会自动执行，需要你手动调用。
+    <strong>免费空间够用吗？</strong>登录后可使用 <a href="https://picgo.app/pricing/" target="_blank" rel="noopener">500 MB 免费图床空间</a>，少量日常文章配图一般够用，用满后再考虑升级。
 </div>
+<p>第一次可以先拖一张图片到 PicGo，确认能上传成功。后续文章里的图片交给 AI 处理即可。</p>
 
-<h3>6. 改用 Cloudflare R2（可选）</h3>
-
-<p>如果你不想让 PicGo GUI 一直挂着，或者要在没有桌面环境的机器上跑，可以直传自己的 R2 桶。走 S3 兼容接口、AWS SigV4 签名，只用 Python 标准库，不需要装 boto3。</p>
-
-<p>先准备三样东西：一个自己的 R2 存储桶；一个<strong>绑定到该桶的公开访问域名</strong>（没有它，图片传上去了也不可公开访问）；一对 R2 的 S3 API 凭据。</p>
-
-<p>然后写进 <code>~/.weiwuming/image-host.json</code>：</p>
-
-<pre><code>{
-  "backend": "r2",
-  "r2": {
-    "account_id": "",
-    "access_key_id": "",
-    "secret_access_key": "",
-    "bucket": "",
-    "domain": "https://img.example.com"
-  }
-}</code></pre>
-
-<p>也可以用环境变量 <code>R2_ACCOUNT_ID</code> / <code>R2_ACCESS_KEY_ID</code> / <code>R2_SECRET_ACCESS_KEY</code> / <code>R2_BUCKET</code> / <code>R2_DOMAIN</code>。验证与上传：</p>
-
-<pre><code>python scripts/upload_image.py --check --backend r2
-python scripts/upload_image.py --backend r2 images/cover.jpg</code></pre>
-
-<p><code>--check</code> 会对存储桶发一个签名 HEAD 请求，同时验证凭据有效和桶存在。对象键是 <code>weiwuming/&lt;内容hash前16位&gt;&lt;后缀&gt;</code>，同内容的图只会占同一个对象，不会堆垃圾文件。想临时切回 PicGo 用 <code>--backend picgo</code>。</p>
-
-<div class="note warn">
-    <strong>R2 凭据是明文存在本地文件里的</strong>，而且有写权限。别把这个文件提交进任何仓库，也别放到会同步至公开位置的目录。建议单独签发一对只对该桶有写权限的凭据，不要复用账号级密钥。
-</div>
-
-<h3>7. 安全</h3>
-
-<ul>
-    <li>PicGo Server 建议只监听 <code>127.0.0.1</code>。若要监听局域网地址，请启用 shared secret 并加防火墙限制。</li>
-    <li>图床凭据只留在 PicGo 配置里，不要提交进任何仓库。</li>
-    <li>上传后的图片通常公网可访问，<strong>不要传隐私或未公开的资料</strong>。</li>
-</ul>
-
-<h2 id="part4">四、常见问题</h2>
-
+<h2 id="part4">四、遇到问题怎么办</h2>
 <div class="tablewrap">
 <table>
-    <tr><th style="width:38%">现象</th><th>原因与处理</th></tr>
-    <tr>
-        <td>Agent 说找不到这个 Skill</td>
-        <td>确认 <code>SKILL.md</code> 在 skill 文件夹最外层、没多套一层目录，然后重启 Agent</td>
-    </tr>
-    <tr>
-        <td>上传报配置无效（退出码 2）</td>
-        <td>PicGo 后端：没选中当前图床，或 Server 没启动。R2 后端：五项配置没填全。先跑 <code>--check</code> 确认</td>
-    </tr>
-    <tr>
-        <td>R2 返回 403 / 404</td>
-        <td>403 是凭据无效或没有该桶写权限；404 多半是桶名或 <code>account_id</code> 写错。<code>--check</code> 会直接暴露这两类问题</td>
-    </tr>
-    <tr>
-        <td>R2 传成功但图片打不开</td>
-        <td><code>domain</code> 没正确绑定到该桶，或桶未开启公开访问。上传只保证对象写入，能否公开读取取决于域名与桶的访问设置</td>
-    </tr>
-    <tr>
-        <td>粘进公众号后图片全裂</td>
-        <td>说明图片还是本地路径。检查稿子里的图片链接是不是 <code>https://</code> 开头</td>
-    </tr>
-    <tr>
-        <td>渲染被拒绝，提示模块顺序错</td>
-        <td>文章有固定顺序：编者按 → 正文 → 目录 → 注释 → <code>---[note]</code> → 作者简介 → 译者简介 → 延伸阅读 → 两条 staff → 关注区。编者按必须是第一个非空内容，上方不能放标题</td>
-    </tr>
-    <tr>
-        <td>粘进公众号后行距、字距变了</td>
-        <td>公众号编辑器会吃掉部分内联样式。工作台已把行距字距挂在卡片最外层来规避，若仍有出入，用「排版微调」面板改完再复制</td>
-    </tr>
-    <tr>
-        <td><code>npm ci</code> 失败</td>
-        <td>确认 Node 18+，并且是在 skill 文件夹里执行的</td>
-    </tr>
+    <thead><tr><th scope="col">遇到的情况</th><th scope="col">可以这样做</th></tr></thead>
+    <tbody>
+        <tr><td>AI 说找不到技能</td><td>重新打开 AI 工具，把技能链接发给它，说「请检查这个技能是否安装成功」。</td></tr>
+        <tr><td>图片上传失败</td><td>确认 PicGo 已打开并登录，把报错发给 AI，说「请帮我检查 PicGo 图片上传」。</td></tr>
+        <tr><td>粘贴后图片不显示</td><td>告诉 AI「公众号里的图片不显示，请检查图片链接并重新生成排版」。</td></tr>
+        <tr><td>字体、行距不满意</td><td>在工作台用「排版微调」调整后重新复制，或直接告诉 AI 你想要的效果。</td></tr>
+    </tbody>
 </table>
 </div>
+<p>其他报错也可以直接发给 AI，请它一步步帮你处理，不需要自己研究命令。</p>
 
 <footer>
     源码与完整文档：<a href="https://github.com/Roloyty/weiwuming-wechat-formatter" target="_blank" rel="noopener">github.com/Roloyty/weiwuming-wechat-formatter</a> · MIT License
