@@ -7,7 +7,7 @@
 - 解析 `.docx` 的标题、段落、样式、表格、脚注、尾注和图片关系。
 - 在安装 LibreOffice 时自动将 legacy `.doc` 转换为 `.docx`。
 - 生成编者按、章节标题、注释、作者简介、人物卡片、书籍卡片和延伸阅读等编辑器语法。
-- 将图片交给用户自己的 PicGo Server，使用用户在 PicGo 中配置并选中的图床。
+- 将图片上传到用户自己的图床：默认交给用户的 PicGo Server，也可选择直传用户自己的 Cloudflare R2 存储桶。
 - 使用随 Skill 打包的编辑器快照和本地 `marked`、`jsdom` 生成微信粘贴版 HTML。
 - 校验编者按首位、模块严格排序、公网图片 URL、语法块配对和未渲染的语法残留。
 - 将疑似错别字、标点和合规问题作为校对提醒列出，不静默修改原文。
@@ -21,7 +21,7 @@ Word / 文本
     ↓
 生成谓无名 Markdown
     ↓
-本地图片 → PicGo Server → 用户自选图床 → 公网 URL
+本地图片 → PicGo Server（或 R2 直传）→ 用户自己的图床 → 公网 URL
     ↓
 编辑器同源渲染与校验
     ↓
@@ -37,12 +37,12 @@ Markdown + 微信粘贴版 HTML + 浏览器预览
 ├── assets/
 │   └── editor-index.html          # 谓无名编辑器快照，作为渲染兜底
 ├── references/
-│   ├── image-host.md              # PicGo Server 配置说明
+│   ├── image-host.md              # 图床配置说明（PicGo / R2）
 │   └── syntax_rules.md            # 编辑器语法参考
 ├── scripts/
 │   ├── extract_docx.py            # Word 结构提取
 │   ├── setup_picgo.py             # PicGo CLI 状态、OAuth 与 uploader 配置引导
-│   ├── upload_image.py            # PicGo Server API 上传客户端
+│   ├── upload_image.py            # 图床上传客户端（PicGo / R2）
 │   └── render_html.js             # 编辑器同源 HTML 渲染与校验
 ├── tests/
 │   ├── test_setup_picgo.py         # PicGo CLI 引导测试
@@ -78,9 +78,20 @@ git clone https://github.com/Roloyty/weiwuming-wechat-formatter.git
 claude skills add https://github.com/Roloyty/weiwuming-wechat-formatter
 ```
 
-## 配置 PicGo 图床
+## 配置图床
 
-本项目不再直连某个固定图床，也不保存图床 AK、SK、Token 或 Bucket。用户需要先在 PicGo 中配置自己的图床并将其设为当前图床。
+上传支持两种后端，都指向**用户自己的**图床，本项目不提供也不代管任何公共图床：
+
+| 后端 | 说明 | 凭据存放 |
+|---|---|---|
+| `picgo`（默认） | 交给用户自己的 PicGo Server | PicGo 自己的配置，本项目不接触 |
+| `r2`（可选） | S3 兼容接口直传用户自己的 Cloudflare R2 | 本地 `~/.weiwuming/image-host.json` 或环境变量 |
+
+后端按此顺序决定：命令行 `--backend` → 环境变量 `WEIWUMING_IMAGE_BACKEND` → 配置文件 `"backend"` 字段 → 自动（R2 配全了用 R2，否则 PicGo）。**不配 R2 的用户行为与以前完全一致。**
+
+### PicGo（默认）
+
+本项目不直连某个固定图床，也不保存图床 AK、SK、Token 或 Bucket。用户需要先在 PicGo 中配置自己的图床并将其设为当前图床。
 
 PicGo GUI 默认上传接口：
 
@@ -141,7 +152,37 @@ python scripts/upload_image.py --json images/*.jpg
 {"list":["图片绝对路径"]}
 ```
 
-PicGo 返回的公网 URL 会写入书籍卡片、人物卡片等语法块。详细配置和故障排查见 [`references/image-host.md`](references/image-host.md)。API 依据为 [PicGo GUI Server 文档](https://docs.picgo.app/gui/guide/advance) 和 [PicGo Core API Reference](https://docs.picgo.app/core/api/)。
+### Cloudflare R2（可选）
+
+适合不想常驻 PicGo GUI、或需要在没有桌面环境的机器上运行的用户。走 S3 兼容接口，AWS SigV4 签名，仅用 Python 标准库。
+
+需要先准备：自己的 R2 存储桶、绑定到该桶的公开访问域名、一对 R2 的 S3 API 凭据。
+
+```json
+{
+  "backend": "r2",
+  "r2": {
+    "account_id": "",
+    "access_key_id": "",
+    "secret_access_key": "",
+    "bucket": "",
+    "domain": "https://img.example.com"
+  }
+}
+```
+
+也可用环境变量 `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` / `R2_DOMAIN`。
+
+```bash
+python scripts/upload_image.py --check --backend r2
+python scripts/upload_image.py --backend r2 images/cover.jpg
+```
+
+对象键为 `weiwuming/<内容hash前16位><后缀>`，返回 `<domain>/<对象键>`。R2 的 Access Key 有写权限且以明文存放在本地配置文件中，请勿提交到任何仓库。
+
+### 结果去向
+
+上传返回的公网 URL 会写入书籍卡片、人物卡片等语法块。详细配置和故障排查见 [`references/image-host.md`](references/image-host.md)。API 依据为 [PicGo GUI Server 文档](https://docs.picgo.app/gui/guide/advance) 和 [PicGo Core API Reference](https://docs.picgo.app/core/api/)。
 
 ## 脚本用法
 
