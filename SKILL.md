@@ -27,8 +27,8 @@ Requirements: Python 3; Node.js 18+ with the bundled dependencies; LibreOffice/s
 - Do not search online to fill missing book/person/publication data — **exception: keyword blocks and extended reading recommendations always require web search** to find accurate person, book, event, and photo information.
 - Do not invent placeholders such as `https://placeholder`, `[待确认]`, or `[信息缺失]` in the formatted article.
 - If an image has no usable hosted URL, do not output standalone image syntax for it.
-- **Keyword block images are downloaded to a local `images/` folder, then uploaded through the user's PicGo Server API** via `python scripts/upload_image.py <图片...>`. PicGo uses the image host selected and configured by the user; this skill stores no image-host credentials. Fill the returned public URL into the syntax block (e.g. `[book:https://cdn.example.com/book.jpg|书名|作者|出版社|年份]`). If PicGo is unavailable or upload fails, leave the image field empty and report it in `校对提醒`.
-- For book/reading-book blocks that are already present in the source but lack a cover URL, search + download + upload through PicGo as above; only if no image can be found, leave the image field empty (e.g. `[book:|书名|作者|出版社|年份]`).
+- **Keyword block images are downloaded to a local `images/` folder, then uploaded to the user's own image host** via `python scripts/upload_image.py <图片...>`. The default backend is the user's PicGo Server; a user who has configured Cloudflare R2 uploads there instead. Either way the destination and the credentials belong to the user, and this skill stores no image-host credentials of its own. Fill the returned public URL into the syntax block (e.g. `[book:https://cdn.example.com/book.jpg|书名|作者|出版社|年份]`). If PicGo is unavailable or upload fails, leave the image field empty and report it in `校对提醒`.
+- For book/reading-book blocks that are already present in the source but lack a cover URL, search + download + upload as above; only if no image can be found, leave the image field empty (e.g. `[book:|书名|作者|出版社|年份]`).
 - If typos, grammar issues, punctuation issues, or political/compliance risks are found, keep the formatted article faithful to the source and report the issues after the markdown under `校对提醒`.
 
 ### 编者按（Editor's Note）
@@ -136,7 +136,7 @@ These blocks should appear directly after the preceding content, without any int
   3. **出版社官网 / Google Books** — for English books and to verify edition metadata (出版社、年份、译者).
   - Book metadata (作者/译者/出版社/年份) must match the actual edition whose cover is used; verify on the source page, not from memory.
 
-#### Image Download + PicGo Upload
+#### Image Download + Image-Host Upload
 
 - **Download** each image to the `images/` directory under the same project folder using Bash (`curl -L -o` or PowerShell `Invoke-WebRequest`).
 - **Naming convention** (use Chinese name, remove punctuation `《》·：` etc., keep alphanumeric and CJK):
@@ -145,18 +145,20 @@ These blocks should appear directly after the preceding content, without any int
   - Movie/TV posters: `movie_<片名>.jpg` — e.g. `movie_千与千寻.jpg`
   - Extended reading covers: `reading_<书名>.jpg` — e.g. `reading_菊与刀.jpg`
   - If filename conflicts occur, append `_2`, `_3` etc.
-- **Upload through PicGo** after all downloads finish, in one batch:
+- **Upload to the user's image host** after all downloads finish, in one batch:
   ```bash
   python <SKILL_ROOT>/scripts/upload_image.py images/*.jpg
   # 每行输出「本地路径<TAB>公网URL」；--json 输出 JSON 映射
   ```
-  - Users must configure and select their own image host in PicGo, then keep PicGo Server running. The default API is `http://127.0.0.1:36677/upload`; override it with `PICGO_API_URL` or `~/.weiwuming/image-host.json` (see `references/image-host.md`).
-  - Run `python <SKILL_ROOT>/scripts/upload_image.py --check` before the first upload. If PicGo Server authentication is enabled, configure `PICGO_SERVER_SECRET` or `picgo.server_secret` in the local config file.
-  - If PicGo is not configured, run `python <SKILL_ROOT>/scripts/setup_picgo.py --status`. When PicGo Core CLI 2.0+ is installed and the user chooses PicGo Cloud, offer `--login` for the official browser OAuth flow. **Do not open the browser without the user's confirmation.** OAuth login configures PicGo Cloud only; GitHub/S3/OSS/COS and other third-party uploaders still require their own credentials through `--configure-uploader` or PicGo GUI.
+  - Two backends are available and both upload to the **user's own** host: `picgo` (default) and `r2` (optional, direct to the user's Cloudflare R2 bucket). The backend is resolved in this order: `--backend picgo|r2` → `WEIWUMING_IMAGE_BACKEND` → the `"backend"` field in the config file → automatic (`r2` when all five R2 keys are present, otherwise `picgo`). Do not switch backends on the user's behalf; just use whatever resolves.
+  - For `picgo`: users must configure and select their own image host in PicGo, then keep PicGo Server running. The default API is `http://127.0.0.1:36677/upload`; override it with `PICGO_API_URL` or `~/.weiwuming/image-host.json` (see `references/image-host.md`).
+  - For `r2`: users supply `account_id`, `access_key_id`, `secret_access_key`, `bucket` and `domain` through `~/.weiwuming/image-host.json` or the `R2_*` environment variables. These are the user's own credentials — never print, echo, or copy them anywhere.
+  - Run `python <SKILL_ROOT>/scripts/upload_image.py --check` before the first upload; it checks whichever backend is active. If PicGo Server authentication is enabled, configure `PICGO_SERVER_SECRET` or `picgo.server_secret` in the local config file.
+  - If the active backend is `picgo` and PicGo is not configured, run `python <SKILL_ROOT>/scripts/setup_picgo.py --status`. (`setup_picgo.py` only concerns the PicGo backend; it does nothing for R2.) When PicGo Core CLI 2.0+ is installed and the user chooses PicGo Cloud, offer `--login` for the official browser OAuth flow. **Do not open the browser without the user's confirmation.** OAuth login configures PicGo Cloud only; GitHub/S3/OSS/COS and other third-party uploaders still require their own credentials through `--configure-uploader` or PicGo GUI.
   - `setup_picgo.py --sync-config` is optional and explicit because the first cloud sync may upload the local PicGo configuration and conflicts require interactive resolution. Never run it automatically.
-  - Remote http(s) URLs passed in are returned as-is. Local-image results are cached in `~/.weiwuming/picgo-upload-cache.json`, isolated by API endpoint and content hash.
-  - Cache write failure is only a warning: keep and report successful PicGo URLs instead of retrying and uploading duplicates.
-  - Exit code 2 = invalid API configuration or PicGo unavailable → leave image fields empty and tell the user to check PicGo Server and `references/image-host.md`.
+  - Remote http(s) URLs passed in are returned as-is. Local-image results are cached in `~/.weiwuming/upload-cache.json`, isolated by backend instance and content hash (the older `picgo-upload-cache.json` is still read as a fallback).
+  - Cache write failure is only a warning: keep and report the successful URLs instead of retrying and uploading duplicates.
+  - Exit code 2 = invalid configuration or the image host is unavailable → leave image fields empty and tell the user which backend failed, pointing at `references/image-host.md`.
 - **Image field in syntax**: fill the returned public URL into the image/cover field:
   - `[book:<公网URL>|书名|作者|出版社|年份]`
   - `[universal:<公网URL>|姓名|身份/简介]`
@@ -244,7 +246,7 @@ These blocks should appear directly after the preceding content, without any int
    - Notes: `---[notes]` ... `---[/notes]`; note entries are single lines in `^[N 内容]` format (Arabic N; the editor auto-converts to circled ①–㊿). Inline references are `^N` — never raw HTML `<sup>N</sup>`. Details and pitfalls in `references/syntax_rules.md` → Notes.
    - Source note: `---[note]` ... `---[/note]`. **No extra `---` line before this block.**
    - Bio: after `---[note]`, place `---[bio-title:作者简介]`, `[bio:原文]`, `---[/bio]`, followed by translator bio when present. **No extra `---` line before these blocks.**
-   - **Keyword blocks**: apply the Selection & Listing Rules above; search with the available web tools, download to `images/`, upload through the user's PicGo Server via `scripts/upload_image.py`, and insert `[book:<URL>|...]`, `[universal:<URL>|...]`, or `[origin:<URL>|...]` blocks at first mention. The first text field of both image syntaxes is plain text and auto-bold.
+   - **Keyword blocks**: apply the Selection & Listing Rules above; search with the available web tools, download to `images/`, upload to the user's image host via `scripts/upload_image.py`, and insert `[book:<URL>|...]`, `[universal:<URL>|...]`, or `[origin:<URL>|...]` blocks at first mention. The first text field of both image syntaxes is plain text and auto-bold.
    - **Extended reading**: 2–5 non-duplicate related books, `---[reading-title:延伸阅读]` ... `---[/reading]` above staff. **No extra `---` line before this block.**
    - Staff credit: `[staff:作者姓名|编辑]` + `[staff:春生、|审校]`.
    - Follow section: the fixed `---[follow]` ... `---[/follow]` footer is mandatory.
@@ -271,7 +273,7 @@ These blocks should appear directly after the preceding content, without any int
 7. Validate before delivery.
    - `render_html.js` exited 0 (this covers image URLs, block pairing, and syntax residue mechanically).
    - No placeholder URLs or invented missing-data markers are present.
-   - Every filled image field is a real public URL returned by the user's PicGo Server through `upload_image.py` (never a local path, never an invented URL); fields without a successful upload are empty.
+   - Every filled image field is a real public URL returned by the user's image host through `upload_image.py` (never a local path, never an invented URL); fields without a successful upload are empty.
    - All downloaded images exist in `images/` with correct naming.
    - Syntax markers are paired: `>>> `/`<<<`, `---[notes]`/`---[/notes]`, `---[note]`/`---[/note]`, `---[reading-title:]`/`---[/reading]`, `---[bio-title:]`/`---[/bio]`.
    - `[universal:]` and `[origin:]` contain at least URL + first line + second line; their first text field contains no Markdown `**` because the editor auto-bolds it. Use `[origin:]` only when the intrinsic image proportions must be preserved.
@@ -323,8 +325,8 @@ If issues exist, list them with source snippets and a concise reason:
 - 政治/合规风险："..."，建议人工复核表述是否符合发布要求。
 - 人物信息存疑：<姓名> 生卒年在 Wikipedia 与 Kotobank 记载不一致，已采用 Kotobank。
 - 图片下载失败：<关键词>，未找到可用图片源。
-- PicGo 上传失败：`images/xxx.jpg`，语法块图片字段已留空；请确认 PicGo 当前图床可用后重跑 `scripts/upload_image.py`。
-- PicGo 接口不可用：`upload_image.py` 退出码 2，请运行 `--check` 并检查 `~/.weiwuming/image-host.json`；如尚未配置，可先运行 `setup_picgo.py --status`，PicGo Cloud 用户可在确认后运行 `--login`。
+- 图床上传失败：`images/xxx.jpg`，语法块图片字段已留空；请确认当前图床后端可用后重跑 `scripts/upload_image.py`。
+- 图床不可用：`upload_image.py` 退出码 2，请运行 `--check` 并检查 `~/.weiwuming/image-host.json`；PicGo 后端如尚未配置，可先运行 `setup_picgo.py --status`，PicGo Cloud 用户可在确认后运行 `--login`。
 ```
 
 ## Word Extraction Notes
