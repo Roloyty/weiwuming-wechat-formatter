@@ -1,4 +1,16 @@
 ---
+slug: weiwuming-formatter
+displayName: 谓无名公众号排版器
+version: 2.0.0
+summary: 把 Word/纯文本文章转成「谓无名」公众号编辑器语法的 Markdown，并用编辑器同源渲染出可直接粘贴进公众号后台的 HTML。
+license: MIT
+homepage: https://github.com/Roloyty/weiwuming-wechat-formatter
+tags:
+  - wechat
+  - 公众号
+  - 排版
+  - markdown
+  - docx
 name: wechat-formatter
 description: |
   Convert uploaded .doc/.docx files or pasted text into WeChat article markdown using the "谓无名" editor syntax.
