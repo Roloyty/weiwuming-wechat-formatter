@@ -2153,7 +2153,7 @@
             { sel: '.body-para > span', css: 'fontSize',      key: 'fontSize',      unit: 'px' },
             { sel: '.body-para > span', css: 'fontFamily',    key: 'fontFamily' },
             { sel: '.body-para > span', css: 'letterSpacing', key: 'letterSpacing', unit: 'px' },
-            { sel: '.para-gap',         css: 'lineHeight',    key: 'blockSpacing',  unit: 'em' }
+            { sel: '.para-gap, .para-gap > p', css: 'lineHeight', key: 'blockSpacing',  unit: 'em' }
         ],
         quote: [
             { sel: '.quote-text',              css: 'lineHeight',    key: 'lineHeight' },
@@ -3367,13 +3367,19 @@
             }
         });
 
-        // 占位空行（<p><br/></p>，分割线内部除外）：固定 1em 高，
-        // 保证微信里段间距与预览一致，不会忽大忽小
+        // 占位空行（<p><br/></p>，分割线内部除外）：行距跟正文一致（2em @ 15px = 30px）。
+        // 空行的高度由这个内层 p 的行盒决定，外层 section 的 line-height 撑不动它，
+        // 所以段间距的覆盖规则也必须落到这个 p 上（见 STYLE_RULES.body）。
+        // 曾经写死 1em，导致粘贴进公众号后空行只有正文行距的一半，且与预览不符。
         clone.querySelectorAll('p').forEach(el => {
             if (el.querySelector('br') && !el.textContent.trim() && !el.closest('.divider')) {
+                // 段间空行（.para-gap 里的）要和正文同为 2em，否则粘进公众号只有半行高；
+                // 注释区、延伸阅读、staff 等处的占位空行不是段间距，维持原来的 1em。
+                const isParaGap = !!el.closest('.para-gap');
                 el.setAttribute(
                     'style',
-                    'margin: 0px; padding: 0px; box-sizing: border-box; line-height: 1em; font-size: 15px;'
+                    'margin: 0px; padding: 0px; box-sizing: border-box; line-height: ' +
+                    (isParaGap ? '2em' : '1em') + '; font-size: 15px;'
                 );
             }
         });
