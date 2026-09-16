@@ -216,6 +216,29 @@ if (staffMarkers.length && structure.follow >= 0 && staffMarkers.at(-1).index >=
   problems.push('所有 [staff:] 必须位于关注引导 ---[follow] 之前');
 }
 
+// 正文书籍卡片：作者、出版社、出版年份必须齐全，且年份紧跟出版社。
+// 延伸阅读的 [reading-book:] 体例不展示出版社和年份，不在此处检查。
+const bodyBookLines = normalizedMd.match(/^\[(?:book|enbook|jpbook):[^\r\n]*\]\s*$/gm) || [];
+for (const line of bodyBookLines) {
+  const trimmed = line.trim();
+  const kindMatch = trimmed.match(/^\[(book|enbook|jpbook):/);
+  if (!kindMatch) continue;
+  const kind = kindMatch[1];
+  const fields = trimmed.slice(kind.length + 2, -1).split('|').map(field => field.trim());
+  if (fields.length !== 5) continue; // 字段数错误会在语法残渣校验中报告。
+  const title = fields[1] || '未命名书籍';
+  const author = fields[2];
+  const publisher = fields[3];
+  const year = fields[4];
+  const missing = [];
+  if (!author) missing.push('作者');
+  if (!publisher) missing.push('出版社');
+  if (!year) missing.push('出版年份');
+  if (missing.length) {
+    problems.push(`正文书籍卡片“${title}”缺少${missing.join('、')}；作者、出版社和出版年份均为必填，出版社后必须显示年份`);
+  }
+}
+
 // 电影/电视剧卡片：标题不加“海报”，导演+编剧同一行，时间+片长同一行。
 const universalLines = normalizedMd.match(/^\[universal:[^\r\n]+\]\s*$/gm) || [];
 for (const line of universalLines) {

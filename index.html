@@ -1818,6 +1818,7 @@
             <code>[book:封面URL|书名|作者|出版社|年份]</code> 书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[enbook:封面URL|书名|作者|出版社|年份]</code> 英文书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[jpbook:封面URL|书名|作者|出版社|年份]</code> 日语书籍信息（封面URL可留空，居中，灰色12px，封面189px+阴影+▲+『』）<br>
+            <code>正文书籍必填项</code> 作者、出版社、出版年份均不可留空；出版社后必须显示年份<br>
             <code>[universal:照片URL|第一行|第二行|...]</code> 通用图片标识（第一行自动加粗，照片+▲+多行文字，用|分行）<br>
             <code>[origin:图片URL|第一行|第二行|...]</code> 原图尺寸图片标识（第一行自动加粗，图片按原始尺寸显示，超宽时等比缩小）<br>
             <code>### 标题 / 作者</code> 章节大标题（居中，#7d90a8，在分割线上方）<br>
@@ -1829,6 +1830,7 @@
             <code>（外文）</code> 半角括号内自动灰色小字12px<br>
             <code>---[notes]</code> 注释区开始（14px黑色标题+细线+240px滚动区）<br>
             <code>^[①脚注内容]</code> 注释条目（12px，蓝色编号+灰色文本，编号后不留空格）<br>
+            <code>^[① ... *English Title* ...]</code> 注释 / 尾注内支持 <code>*斜体*</code> <code>**粗体**</code>（英文书名用斜体）<br>
             <code>---[/notes]</code> 注释区结束<br>
             <code>---[note]</code> 尾注区开始<br>
             <code>- ・ 内容</code> 尾注条目（12px灰色）<br>
@@ -2451,6 +2453,16 @@
     }
 
     // 预处理 Markdown：自定义语法 → marked 可识别
+    // 行内 Markdown：注释区/尾注区/目录区这类自定义 HTML 块不会经过 marked 的行内解析，
+    // 需要自己把 *斜体* **粗体** 转成标签（英文书名斜体主要靠这里）
+    function inlineMarkdown(text) {
+        if (!text) return text;
+        return text
+            .replace(/\*\*\*([^*\n]+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+            .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
+    }
+
     function preprocessMarkdown(md) {
         // 将 ^数字 / ^[数字 ...] 转换为带圈数字，与 ^① 效果相同
         const circledNums = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩',
@@ -2567,7 +2579,7 @@
 
             // 目录区内容
             if (inTocSection) {
-                let tocLine = line.trim().replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                let tocLine = inlineMarkdown(line.trim());
                 result.push('<p class="toc-entry">' + tocLine + '</p>');
                 continue;
             }
@@ -2614,7 +2626,7 @@
             if (inNoteSection) {
                 if (line.trim() === '') continue;
                 let text = line.replace(/^[-・]\s*/, '').trim();
-                result.push('<div class="end-notes"><p>・' + text + '</p></div>');
+                result.push('<div class="end-notes"><p>・' + inlineMarkdown(text) + '</p></div>');
                 continue;
             }
 
@@ -2622,7 +2634,7 @@
             if (inNotesSection) {
                 let fnMatch = line.match(/^\^\[([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶㊷㊸㊹㊺㊻㊼㊽㊾㊿])\s*(.+?)\s*\]$/);
                 if (fnMatch) {
-                    result.push('<div class="footnote-item"><span class="fn-num">' + fnMatch[1] + '</span><span class="fn-text">' + fnMatch[2] + '</span></div>');
+                    result.push('<div class="footnote-item"><span class="fn-num">' + fnMatch[1] + '</span><span class="fn-text">' + inlineMarkdown(fnMatch[2]) + '</span></div>');
                     continue;
                 }
                 // 空行跳过
@@ -4139,6 +4151,20 @@
         // 排版微调：必须排在全部既有规则之后，否则会被上面的 setAttribute('style', ...) 覆盖掉
         applyStyleSettings(clone);
         applyBlockOverrides(clone, true);
+
+        // 斜体 / 粗体补内联样式：微信后台会丢掉没有 style 的 em / i / strong / b
+        clone.querySelectorAll('em, i').forEach(el => {
+            let s = el.getAttribute('style') || '';
+            if (!/font-style/.test(s)) {
+                el.setAttribute('style', (s ? s.replace(/;?\s*$/, '; ') : '') + 'font-style: italic;');
+            }
+        });
+        clone.querySelectorAll('strong, b').forEach(el => {
+            let s = el.getAttribute('style') || '';
+            if (!/font-weight/.test(s)) {
+                el.setAttribute('style', (s ? s.replace(/;?\s*$/, '; ') : '') + 'font-weight: bold;');
+            }
+        });
 
         return '<section class="article135" style="box-sizing: border-box; margin: 0 0px;">' + clone.innerHTML + '</section>';
     }

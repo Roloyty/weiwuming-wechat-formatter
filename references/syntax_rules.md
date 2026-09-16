@@ -64,6 +64,8 @@ Rules:
 - **Plain lines inside `---[notes]` are NOT rendered as footnote items** — they pass through as ordinary paragraphs. A bibliography pasted as bare lines therefore shows no numbering and wrong styling. Wrap every entry as `^[N …]`.
 - Entry numbers must correspond 1:1 with the inline `^N` references (same N, no gaps).
 - Long notes (including ones containing URLs or mixed Chinese/English citations) must stay on a single source line — no internal line breaks.
+- **Emphasis inside note entries works**: the editor runs its own inline pass over `^[N …]` text, so `*斜体*`, `**粗体**` and `***粗斜***` render inside notes (they do NOT go through marked — the entry is emitted as an HTML block — which is why plain marked syntax used to be dropped here). The same applies to `---[note]` source-note lines and `---[toc]` entries.
+- **Western-language work titles use italics, not 《》**: in notes, body text, source notes and 延伸阅读 prose, write `*Norwegian Wood*` / `*Orientalism*` rather than `《Norwegian Wood》`. Chinese titles keep `《》`, Japanese titles keep `『』`. This matches `[enbook:]` and `[reading-enbook:]`, which already render English titles italic with no book brackets. Journal names, film titles and other Western-language works follow the same rule.
 
 ### Footnote recovery from MinerU conversions
 
@@ -103,7 +105,7 @@ Rules:
   3. 图片源于作者/互联网。— credits image source. Use "作者" if images are from the author, "互联网" if from the web.
 - Endnote entries within `---[note]` use `- ・ 内容` format.
 
-Use book blocks only when the source already provides a book/info block or the user asks to mark one. Do not search to complete missing fields.
+Use book blocks only when the source already provides a book/info block or the user asks to mark one. For a body book block, verify the exact edition online and complete the author, publisher, and publication year even when the source omits them.
 
 ```markdown
 [book:封面URL|书名|作者|出版社|年份]
@@ -115,7 +117,7 @@ Rules:
 - If cover URL is missing, leave the first field empty: `[book:|书名|作者|出版社|年份]`.
 - Do not use placeholder URLs.
 - Do not add `[待确认]` or `[信息缺失]` inside the article.
-- Keep source-provided metadata as written, even if incomplete; report suspected issues in `校对提醒`.
+- **Author, publisher, and publication year are mandatory for body book cards.** The publisher must be followed by a non-empty year field. Verify missing values against an authoritative edition source; never leave them blank and never guess. The renderer rejects incomplete `[book:]`, `[enbook:]`, and `[jpbook:]` metadata.
 
 ## Extended Reading
 
@@ -215,6 +217,8 @@ The first text field is automatically bold. Put verified birth/death years immed
 ```
 
 **Important Format Rule**: Each field MUST be separated by `|` (pipe character). Do NOT use `、` or any other delimiter to combine author, publisher, and year into a single field.
+
+**Required metadata**: the author, publisher, and publication-year fields must all be non-empty, and the year must come immediately after the publisher as the fifth field. Missing publisher/year is a rendering validation error. This applies to body book cards only; `[reading-book:]` deliberately omits publisher and year.
 
 - ❌ Wrong: `[jpbook:https://xxx.jpg|书名|作者、出版社、年份]`
 - ✅ Correct: `[jpbook:https://xxx.jpg|竹内好全集|竹内好|岩波書店|2005]`

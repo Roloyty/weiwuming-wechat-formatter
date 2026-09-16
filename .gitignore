@@ -3,3 +3,11 @@ __pycache__/
 *.pyc
 images/
 _user_meta.json
+
+# 发布包由 scripts/build_skill_package.js 生成
+dist/
+
+# 本地部署、同步与渲染产物
+.deploy/
+.picgo-sync-work/
+outputs/

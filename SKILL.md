@@ -121,7 +121,7 @@ These blocks should appear directly after the preceding content, without any int
 
 - **人物 `[universal:]` blocks**: pick only **substantive** persons — those the article discusses, quotes, or builds an argument on. Skip passing name-drops, and skip a person who is already represented by their own book's `[book:]` block in the same paragraph. **Target 3–6 person blocks per article** (fewer is fine for short articles); insert each at the paragraph of first mention only, never twice for the same person. The first text field must be `姓名（生年~ 卒年）` — **one space after the tilde, before the death year**; for living persons use `姓名（生年~）` with nothing after the tilde. The second field contains identity and contribution only, without repeating the dates.
 - **图片语法选择**: 人物、电影/电视剧海报、广告使用 `[universal:]`（统一卡片尺寸）；史料照片、艺术作品、横幅或其他必须保留原始宽高比例的图片使用 `[origin:]`。不要用 Markdown `**` 包裹第一项文字，两种语法都会自动将第一项加粗。
-- **书籍 blocks**: every book the article substantively discusses gets one block at first mention — `[book:]` for Chinese editions, `[enbook:]` for English, `[jpbook:]` for Japanese. Never duplicate a book.
+- **书籍 blocks**: every book the article substantively discusses gets one block at first mention — `[book:]` for Chinese editions, `[enbook:]` for English, `[jpbook:]` for Japanese. Never duplicate a book. **正文书籍卡片的作者、出版社和出版年份都是必填项；出版社后必须显示出版年份。** If the source omits the publisher or year, verify the exact edition online and complete the missing field before rendering. Never leave these fields empty and never guess.
 - **延伸阅读**: recommend **2–5 books**, thematically tied to the article's subject. Must NOT repeat any book already in the article body. Prefer in-print Chinese editions (豆瓣 has an entry); order from most to least directly related.
 - In the final report, list what was chosen and why (one line each), so the user can veto or swap entries.
 
@@ -186,6 +186,7 @@ These blocks should appear directly after the preceding content, without any int
   - Books → `[book:<URL>|书名|作者|出版社|年份]` / `[enbook:<URL>|Title|Author|Publisher|Year]` / `[jpbook:<URL>|書名|著者|出版社|年]`
     - **Field separator rule**: each field MUST be separated by `|`, do NOT use `、` or other delimiters within fields.
     - **Book name**: do NOT add 《》 or similar punctuation around the book name.
+    - **Publisher + year are mandatory in body book cards**: every `[book:]`, `[enbook:]`, and `[jpbook:]` must contain a non-empty publisher field followed by a non-empty publication-year field. Search authoritative edition metadata when the source omits either value. A blank year after the publisher is a validation error.
     - Example: `[book:http://.../weiwuming/a1b2c3d4.jpg|浮世通鉴：日本大众文化史|日文研项目组 编著，党蓓蓓 译|北京大学出版社|2025]`
     - Incorrect: `[book:xxx.jpg|《书名》|作者，出版社，年份]` (missing separators and extra punctuation)
   - Movies/TV posters and advertisements → `[universal:<URL>|《片名》|导演：姓名，编剧：姓名|上映：年份，片长：分钟]` — search **Douban** first for movie/TV posters.
@@ -256,6 +257,7 @@ These blocks should appear directly after the preceding content, without any int
    - Section heading: `## 标题` followed by `---[dot]` (always bound together).
    - Blockquote: `> 原文`.
    - Notes: `---[notes]` ... `---[/notes]`; note entries are single lines in `^[N 内容]` format (Arabic N; the editor auto-converts to circled ①–㊿). Inline references are `^N` — never raw HTML `<sup>N</sup>`. Details and pitfalls in `references/syntax_rules.md` → Notes.
+   - **Western-language work titles are italic, never 《》**: write `*Norwegian Wood*`, `*Orientalism*` in notes, body text, source notes and 延伸阅读 prose. Chinese titles keep `《》`, Japanese `『』`. Inline `*斜体*` / `**粗体**` also work inside `---[notes]`, `---[note]` and `---[toc]` entries.
    - Source note: `---[note]` ... `---[/note]`. **No extra `---` line before this block.**
    - Bio: after `---[note]`, place `---[bio-title:作者简介]`, `[bio:原文]`, `---[/bio]`, followed by translator bio when present. **No extra `---` line before these blocks.**
    - **Keyword blocks**: apply the Selection & Listing Rules above; search with the available web tools, download to `images/`, upload to the user's image host via `scripts/upload_image.py`, and insert `[book:<URL>|...]`, `[universal:<URL>|...]`, or `[origin:<URL>|...]` blocks at first mention. The first text field of both image syntaxes is plain text and auto-bold.
@@ -291,9 +293,11 @@ These blocks should appear directly after the preceding content, without any int
    - `[universal:]` and `[origin:]` contain at least URL + first line + second line; their first text field contains no Markdown `**` because the editor auto-bolds it. Use `[origin:]` only when the intrinsic image proportions must be preserved.
    - Every person `[universal:]` card puts verified birth/death years immediately after the name; the description does not repeat them.
    - Every movie/TV `[universal:]` card uses the bare work title (no `海报` suffix), lists both director and screenwriter on the second rendered line, and has a dedicated time field containing both release/premiere time and runtime. It omits synopsis/context by default; explicitly requested notes use a later `|` field.
+   - Every body `[book:]`, `[enbook:]`, and `[jpbook:]` card has non-empty author, publisher, and publication-year fields; the rendered metadata shows the year immediately after the publisher. Missing publisher/year is a hard validation failure, not a校对提醒.
    - **No extra `---` horizontal rule** before `---[note]`, `---[bio-title:]`, `---[reading-title:]`, `---[toc]`, or `---[notes]` blocks.
    - The article follows the exact structure order: 编者按 → 正文 → 目录(如有) → 注释(如有) → `---[note]` → 作者简介 → 译者简介(如有) → 延伸阅读 → 两条 staff → 固定关注区.
    - Every `##` heading is followed by `---[dot]`.
+   - **Western-title italics check**: no `《` wrapping a purely Latin-script title anywhere in the markdown (notes, body, `---[note]`, 延伸阅读 prose) — those must be `*Title*`. In the rendered HTML, each such title appears inside an `<em>`; `[enbook:]` / `[reading-enbook:]` fields stay bracket-free and unmarked (the editor italicizes them itself).
    - **Notes/footnote format checks**: (1) inline `^N` reference count == `^[N …]` entry count in `---[notes]`; (2) in the rendered HTML, `footnote-item` divs and `footnote-num` spans both equal that count, with no gaps in the circled-number sequence; (3) zero `<sup>` tags and zero bare `^数字` left in the HTML. If the source had footnotes, every marker must have its recovered entry — no "footnotes lost" report while `page_footnote` blocks still exist in the MinerU JSON.
    - **Punctuation normalization checks** (OCR sources): no half-width `, ; :` followed by a space inside Chinese sentences (should be `，；：`); no smart quotes U+201C/U+201D in Chinese context (unify to the article's `「」` style, keep English quotes in English citations); no unclosed `「` without `」`; no empty parentheses `（ ）` from OCR-dropped years/terms (restore only verifiable values, otherwise report in 校对提醒). When doing exact-string replacements, diagnose actual char codes first (`charCodeAt`) — curly vs straight quotes look identical in output.
    - Person blocks are substantive and unique (target 3–6; fewer is fine for short articles); reading list has 2–5 items and no duplicates with body books.

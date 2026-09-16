@@ -138,6 +138,28 @@ class RenderOrderTests(unittest.TestCase):
         result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_accepts_complete_body_book_metadata(self):
+        cards = (
+            "[book:https://example.com/cn.jpg|测试中文书|测试作者|测试出版社|2026]\n\n"
+            "[enbook:https://example.com/en.jpg|Test Book|Test Author|Test Press|2025]\n\n"
+            "[jpbook:https://example.com/jp.jpg|テスト本|テスト著者|テスト出版社|2024]\n\n"
+        )
+        result = self.render(EDITOR_NOTE + BODY + cards + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rejects_body_book_without_publication_year(self):
+        card = "[book:https://example.com/cover.jpg|测试书|测试作者|测试出版社|]\n\n"
+        result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("出版年份", result.stderr)
+        self.assertIn("出版社后必须显示年份", result.stderr)
+
+    def test_rejects_body_book_without_publisher(self):
+        card = "[enbook:https://example.com/cover.jpg|Test Book|Test Author||2026]\n\n"
+        result = self.render(EDITOR_NOTE + BODY + card + NOTE + AUTHOR + READING + FOOTER)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("出版社", result.stderr)
+
     def test_rejects_movie_card_without_runtime(self):
         card = (
             "[universal:https://example.com/poster.jpg|《测试电影》|导演：测试导演，编剧：测试编剧|"
