@@ -2759,7 +2759,7 @@
             // [bio:简介文本] 简介区文字
             let bioTextMatch = line.trim().match(/^\[bio:(.+?)\]$/);
             if (bioTextMatch && inBioSection) {
-                result.push('<p class="bio-text"><span>' + bioTextMatch[1] + '</span></p>');
+                result.push('<p class="bio-text"><span>' + inlineMarkdown(bioTextMatch[1]) + '</span></p>');
                 continue;
             }
 

@@ -294,6 +294,8 @@ Rules:
 
 Only include `[bio-img:url]` if a hosted URL is provided or present in source.
 
+Bio text supports `*italic*`, `**bold**`, and `***bold italic***`. Keep Western-language book titles in `*Title*`, for example `[bio:著有 *The Politics of Time in China and Japan: Back to the Future*（2022）。]`. Both the preview and copied HTML must render the title in italics without visible stars. Custom bio HTML must call `inlineMarkdown` before insertion; the later block Markdown parser does not parse text inside it.
+
 The author bio is the first bio block after `---[note]`. Put the translator bio after the author bio when present. Move source bio wording into these blocks; do not leave duplicate bios in the body.
 
 ## Staff and Follow
