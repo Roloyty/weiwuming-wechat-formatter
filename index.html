@@ -7,7 +7,6 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260829">
     <link rel="shortcut icon" href="./favicon.svg?v=20260829">
     <script src="vendor/marked.min.js"></script>
-    <link rel="stylesheet" href="formatter/workbench.css">
     <style>
         :root {
             --theme-color: #3daad6;
@@ -142,6 +141,8 @@
             outline: 2px solid var(--azure);
             outline-offset: 2px;
         }
+
+        a.btn { text-decoration: none; }
 
         /* 主动作 = 落印：印泥红 */
         .btn-primary {
@@ -1397,14 +1398,14 @@
         .wx-content .book-info,
         .wx-content .enbook-info,
         .wx-content .jpbook-info {
-            line-height: 1.6;
+            line-height: 1.3;
             letter-spacing: 0.544px;
         }
 
         /* 人物/图片说明的各行本来就没写字距，所以这里只挂行距，
            字距保持不设置 —— 公众号那边调字距靠继承，本来就调得动 */
         .wx-content .person-info {
-            line-height: 1.6;
+            line-height: 1.3;
         }
 
         .wx-content .book-info .book-cover,
@@ -1532,6 +1533,27 @@
             font-weight: 600;
             letter-spacing: .14em;
             color: var(--ink-soft);
+        }
+
+        /* 模板选择 */
+        .template-option { flex-basis: 100%; flex-wrap: wrap; row-gap: 4px; }
+        .template-option label, .template-select { flex: none; }
+
+        .template-select {
+            padding: 3px 6px;
+            border: 1px solid var(--rule-soft);
+            border-radius: 4px;
+            background: #fff;
+            font-family: var(--ui-serif);
+            font-size: 13px;
+            color: var(--ink);
+            cursor: pointer;
+        }
+
+        .template-desc {
+            font-size: 12px;
+            color: var(--ink-soft);
+            line-height: 1.5;
         }
 
         /* 色板：墨滴 */
@@ -1737,6 +1759,12 @@
             }
         }
 
+        /* 顶栏多了「使用说明」入口，窄屏先收掉装饰性的 byline，
+           否则换行阈值会从 898px 抬到 1010px，900~1010 之间会多挤出一行 */
+        @media (max-width: 1020px) {
+            .byline { display: none; }
+        }
+
         @media (max-width: 900px) {
             .main-container { flex-direction: column; }
             .editor-panel, .preview-panel { width: 100%; height: 50%; }
@@ -1759,9 +1787,6 @@
         <span class="byline">Powered by Rolo</span>
     </div>
     <div class="toolbar-actions">
-        <button class="btn btn-secondary" id="importDocumentBtn" type="button">导入文档</button>
-        <button class="btn btn-secondary" id="apiSettingsBtn" type="button">API 设置</button>
-        <button class="btn btn-secondary" id="exportFilesBtn" type="button">导出文件</button>
         <div class="undo-redo-group">
             <button class="btn btn-undo-redo" id="undoBtn" onclick="undo()" disabled title="撤销 (Ctrl+Z)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
@@ -1772,6 +1797,10 @@
                 重做
             </button>
         </div>
+        <a class="btn btn-secondary" href="guide.html" title="查看简单上手步骤、AI 工具下载和图片上传说明">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            使用说明
+        </a>
         <button class="btn btn-secondary" onclick="toggleHelp()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             语法手册
@@ -1787,59 +1816,6 @@
     </div>
 </header>
 
-<section class="document-workbench" aria-label="谓无名文档排版">
-    <input type="file" id="documentFile" accept=".docx,.pdf,.txt,.md" hidden>
-    <button type="button" class="document-drop" id="documentDrop">
-        <span class="import-mark" aria-hidden="true">稿</span>
-        <span><strong id="documentName">拖入 DOCX / PDF，生成谓无名排版</strong><small id="documentSummary">保留正文 · 编者按 · 关键词卡片 · 注释 · 延伸阅读</small></span>
-        <span class="document-file-label">选择文档 ↗</span>
-    </button>
-    <div class="document-actions">
-        <button type="button" class="btn btn-primary" id="generateDocumentBtn" disabled>生成谓无名排版</button>
-        <button type="button" class="btn btn-secondary" id="cancelDocumentBtn" hidden>停止</button>
-        <button type="button" class="document-detail-btn" id="documentDetailsBtn">文档信息 / 转换记录</button>
-        <span class="document-state" id="documentState" role="status" aria-live="polite">等待导入</span>
-    </div>
-    <div class="document-details" id="documentDetails" hidden>
-        <div class="document-metadata">
-            <label>作者<input id="documentAuthor" placeholder="自动识别，可补充"></label>
-            <label>来源<input id="documentSource" placeholder="原稿书名、篇名或刊物"></label>
-            <label>授权说明<input id="documentPermission" placeholder="仅填写已获授权的说明"></label>
-        </div>
-        <ol class="conversion-steps" id="conversionSteps" aria-label="转换进度">
-            <li data-step="import">读取文档</li><li data-step="structure">整理结构</li><li data-step="research">核实资料</li><li data-step="images">处理配图</li><li data-step="validate">校验排版</li>
-        </ol>
-        <div id="conversionReport" class="conversion-report"></div>
-    </div>
-</section>
-
-<dialog id="apiSettingsDialog" class="workbench-dialog">
-    <form id="apiSettingsForm">
-        <div class="dialog-heading"><div><span class="dialog-kicker">谓无名 · 文稿工作台</span><h2>配置你的 API</h2></div><button type="button" class="dialog-close" data-close="apiSettingsDialog" aria-label="关闭 API 设置">×</button></div>
-        <p class="dialog-intro">使用自己的模型生成编者按，检索资料并完成排版。文稿与密钥经本工作台中转调用，不在服务器保存。</p>
-        <div class="settings-grid">
-            <label>服务商<select id="apiProvider"></select></label>
-            <label>模型名称<input id="apiModel" required placeholder="填写你的账户可用模型"></label>
-            <label class="settings-wide">服务地址<input id="apiBaseUrl" type="url" required placeholder="https://服务地址/v1"></label>
-            <label class="settings-wide">API Key<input id="apiKey" type="password" required autocomplete="off" placeholder="仅保存在当前浏览器会话"></label>
-            <label class="settings-wide">扫描识别模型<input id="apiVisionModel" placeholder="选填；扫描 PDF 需要支持图片的模型"></label>
-        </div>
-        <details class="settings-section" open><summary>资料检索</summary><p>按既有排版规则核实人物、书籍版次和延伸阅读。</p><label>Tavily API Key<input id="searchApiKey" type="password" autocomplete="off" placeholder="填写 tvly-… 检索密钥"></label><a href="https://app.tavily.com" target="_blank" rel="noopener noreferrer">获取检索密钥 ↗</a></details>
-        <details class="settings-section"><summary>自己的图床</summary><p>原文配图和检索到的封面、人物图片上传到你的图床。未配置时按 skill 规则留空，并列入校对提醒。</p>
-            <label>图片存储<select id="imageHostKind"><option value="">暂未配置</option><option value="custom">自己的上传接口</option><option value="r2">Cloudflare R2</option></select></label>
-            <div id="customHostFields" hidden><label>上传地址<input id="imageHostEndpoint" type="url" placeholder="HTTPS 图片上传接口"></label><label>上传密钥<input id="imageHostKey" type="password" autocomplete="off" placeholder="Bearer Token（可选）"></label><small>接口接收 file 表单字段，返回 url 或 data.url。</small></div>
-            <div id="r2HostFields" class="settings-grid" hidden><label>账户 ID<input id="r2AccountId"></label><label>存储桶<input id="r2Bucket"></label><label>Access Key ID<input id="r2AccessKeyId" type="password" autocomplete="off"></label><label>Secret Access Key<input id="r2SecretAccessKey" type="password" autocomplete="off"></label><label class="settings-wide">图片公开域名<input id="r2PublicBase" type="url" placeholder="https://图片域名"></label></div>
-        </details>
-        <p class="settings-notice">调用费用由你的 API 账户承担。模型名可以修改；密钥仅保存在当前浏览器会话。</p>
-        <div class="dialog-footer"><span id="apiSettingsStatus" role="status"></span><button type="button" class="btn btn-secondary" id="testApiBtn">测试连接</button><button type="submit" class="btn btn-primary">保存配置</button></div>
-    </form>
-</dialog>
-
-<dialog id="exportFilesDialog" class="workbench-dialog export-dialog">
-    <div class="dialog-heading"><div><span class="dialog-kicker">保留可编辑文稿</span><h2>导出排版文件</h2></div><button type="button" class="dialog-close" data-close="exportFilesDialog" aria-label="关闭导出">×</button></div>
-    <p class="dialog-intro">三个文件均使用当前编辑区内容，HTML 与“复制排版结果”使用同一套渲染。</p>
-    <div class="export-options"><button type="button" data-export="md"><strong>Markdown 文稿</strong><small>可继续编辑与校对</small></button><button type="button" data-export="html"><strong>微信 HTML</strong><small>公众号内联样式</small></button><button type="button" data-export="preview"><strong>预览 HTML</strong><small>附复制排版结果按钮</small></button></div>
-</dialog>
 
 <!-- 主体 -->
 <div class="main-container">
@@ -1864,6 +1840,7 @@
             <code>[book:封面URL|书名|作者|出版社|年份]</code> 书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[enbook:封面URL|书名|作者|出版社|年份]</code> 英文书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[jpbook:封面URL|书名|作者|出版社|年份]</code> 日语书籍信息（封面URL可留空，居中，灰色12px，封面189px+阴影+▲+『』）<br>
+            <code>正文书籍必填项</code> 作者、出版社、出版年份均不可留空；出版社后必须显示年份<br>
             <code>[universal:照片URL|第一行|第二行|...]</code> 通用图片标识（第一行自动加粗，照片+▲+多行文字，用|分行）<br>
             <code>[origin:图片URL|第一行|第二行|...]</code> 原图尺寸图片标识（第一行自动加粗，图片按原始尺寸显示，超宽时等比缩小）<br>
             <code>### 标题 / 作者</code> 章节大标题（居中，#7d90a8，在分割线上方）<br>
@@ -1896,6 +1873,11 @@
         </div>
         <!-- 主题颜色设置 -->
         <div class="style-options">
+            <div class="style-option template-option">
+                <label for="templateSelect">模板：</label>
+                <select id="templateSelect" class="template-select" onchange="setTemplate(this.value)"></select>
+                <span class="template-desc" id="templateDesc"></span>
+            </div>
             <div class="style-option">
                 <label>主题色：</label>
                 <div class="theme-colors">
@@ -2200,7 +2182,7 @@
             { sel: '.body-para > span', css: 'fontSize',      key: 'fontSize',      unit: 'px' },
             { sel: '.body-para > span', css: 'fontFamily',    key: 'fontFamily' },
             { sel: '.body-para > span', css: 'letterSpacing', key: 'letterSpacing', unit: 'px' },
-            { sel: '.para-gap',         css: 'lineHeight',    key: 'blockSpacing',  unit: 'em' }
+            { sel: '.para-gap, .para-gap > p', css: 'lineHeight', key: 'blockSpacing', unit: 'em' }
         ],
         quote: [
             { sel: '.quote-text',              css: 'lineHeight',    key: 'lineHeight' },
@@ -2402,6 +2384,253 @@
         });
     }
 
+    // ===== 公众号模板 =====
+    // 模板只追加行内样式、不改 DOM 结构：预览区每次重渲染后调一次 applyTemplate，
+    // 复制时在全部基础样式之后对克隆体再调一次 —— 和「排版微调」一样两条路径读同一张表，
+    // 所以按钮复制、手动选中复制、导出 HTML 和 skill 的 render_html.js 结果一致。
+    // 排版微调与 [style:...] 排在模板之后，仍然可以逐项覆盖模板。
+    //
+    // 规则写成 [选择器, 声明]；声明可以是函数，参数 p 为当前配色：
+    //   p.theme 主题色  p.book / p.bookLight 书籍色  p.paper 底色  p.tint(色, 比例) 向白色混合
+    // 用户在模板之上再换主题色时，配套的浅色底会跟着变。
+    // 只用公众号编辑器保留的属性（颜色、边框、内外边距、圆角、字体），不用 position / grid / class。
+    const TPL_SONG = '宋体, SimSun, serif';
+    const TPL_KAI = '楷体, KaiTi, STKaiti, serif';
+    const TPL_HEI = '黑体, SimHei, "Microsoft YaHei", sans-serif';
+    const TPL_SANS = '-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif';
+    // 分割线中间的圆点断口、编者按右下角圆点：收成 0 尺寸而不是 display:none，粘贴后不会被编辑器还原成白块
+    const TPL_NO_GAP = 'width: 0px; height: 0px; margin: 0px; background-color: transparent;';
+
+    const TEMPLATES = [
+        {
+            id: 'weiwuming', name: '谓无名', desc: '默认：宋体正文、居中蓝色小标题、点线分割，适合人文书评与译介',
+            themeColor: '#3daad6', bookColor: '#888888', rules: []
+        },
+        {
+            id: 'academic', name: '学术期刊', desc: '首行缩进、左对齐粗标题、楷体引文，适合论文导读与长篇研究',
+            themeColor: '#1f4e79', bookColor: '#6b6b6b',
+            rules: [
+                ['.editor-note', 'border-top: none; border-bottom: none; padding: 0px; background-color: #f5f6f8;'],
+                ['.editor-note-inner', p => `margin: 0px; padding: 16px 18px; border-left: 3px solid ${p.theme}; border-right: none;`],
+                ['.editor-note-label', 'font-weight: bold; letter-spacing: 4px;'],
+                ['.dot-decoration', TPL_NO_GAP],
+                ['.section-title', 'text-align: left;'],
+                ['.section-title span', p => `display: block; padding-left: 10px; border-left: 4px solid ${p.theme}; font-size: 17px; line-height: 1.6; color: #1a1a1a; font-family: ${TPL_HEI};`],
+                ['.divider-rule', 'border-top: 1px solid #d9dde3;'],
+                ['.divider-gap, .divider-dot', TPL_NO_GAP],
+                ['.body-para', 'text-indent: 2em;'],
+                ['.body-para > span', 'color: #1f1f1f;'],
+                ['.para-gap, .para-gap > p', 'line-height: 1em;'],
+                ['.body-para strong', p => `color: ${p.theme};`],
+                ['.quote-text', 'border-left: none; padding: 4px 2em;'],
+                ['.quote-para, .quote-cite', `font-size: 15px; color: #333333; font-family: ${TPL_KAI};`],
+                ['.notes-header', 'font-weight: bold;'],
+                ['th', p => `background-color: ${p.tint(p.theme, 0.9)};`]
+            ]
+        },
+        {
+            id: 'ink', name: '水墨朱砂', desc: '米黄纸底、朱砂点题、楷体标题，适合古典文史、随笔与诗文',
+            themeColor: '#a23b2a', bookColor: '#7a6a58', paper: '#f7f1e3',
+            wrapper: 'padding: 18px 6px;',
+            rules: [
+                ['.editor-note', p => `background-color: ${p.paper}; border-top: 1px solid #bfa98a; border-bottom: 1px solid #bfa98a;`],
+                ['.editor-note-inner', 'border-left: 1px solid #bfa98a; border-right: 1px solid #bfa98a;'],
+                ['.editor-note-label', `letter-spacing: 4px; font-family: ${TPL_KAI};`],
+                ['.note-para span', 'color: #6b5d50;'],
+                ['.dot-decoration', p => `background-color: ${p.theme};`],
+                ['.section-title span', p => `font-size: 18px; letter-spacing: 3px; color: ${p.theme}; font-family: ${TPL_KAI};`],
+                ['.divider-rule', 'border-top: 1px dotted #bfa98a;'],
+                ['.divider-gap', p => `background-color: ${p.paper};`],
+                ['.divider-dot', p => `background-color: ${p.theme};`],
+                ['.notes-scroll, .toc-scroll', p => `background-color: ${p.paper};`],
+                ['.body-para > span', 'color: #2b2420;'],
+                ['.body-para strong', p => `color: ${p.theme};`],
+                ['.quote-text', p => `border-left: 3px solid ${p.theme}; background-color: #efe6d2;`],
+                ['.quote-para, .quote-cite', `font-size: 15px; color: #4a3d33; font-family: ${TPL_KAI};`],
+                ['.bio-title, .reading-title, .toc-title', `letter-spacing: 2px; font-family: ${TPL_KAI};`],
+                ['th', 'background-color: #efe6d2;']
+            ]
+        },
+        {
+            id: 'graphite', name: '石墨极简', desc: '无衬线、全灰阶、左侧粗竖线标题，适合设计、科技评论与观点',
+            themeColor: '#27272a', bookColor: '#71717a',
+            rules: [
+                ['.editor-note', 'border-top: none; border-bottom: none; padding: 0px; background-color: #f4f4f5;'],
+                ['.editor-note-inner', 'margin: 0px; padding: 16px 18px; border-left: none; border-right: none;'],
+                ['.editor-note-label', `font-weight: bold; letter-spacing: 3px; font-family: ${TPL_SANS};`],
+                ['.note-para span', `color: #52525b; font-family: ${TPL_SANS};`],
+                ['.dot-decoration', TPL_NO_GAP],
+                ['.section-title', 'text-align: left;'],
+                ['.section-title span', p => `display: block; padding-left: 10px; border-left: 4px solid ${p.theme}; font-size: 18px; line-height: 1.5; font-family: ${TPL_SANS};`],
+                ['.divider-rule', 'border-top: 1px solid #e4e4e7;'],
+                ['.divider-gap, .divider-dot', TPL_NO_GAP],
+                ['.body-para', 'letter-spacing: 0.5px;'],
+                ['.body-para > span', `color: #3f3f46; font-family: ${TPL_SANS};`],
+                ['.body-para strong', p => `color: ${p.theme}; border-bottom: 2px solid #d4d4d8;`],
+                ['.quote-text', p => `border-left: 3px solid ${p.theme}; background-color: #f4f4f5;`],
+                ['.quote-para, .quote-cite', `color: #52525b; font-family: ${TPL_SANS};`],
+                ['.notes-header, li, td, th', `font-family: ${TPL_SANS};`],
+                ['th', 'background-color: #f4f4f5;']
+            ]
+        },
+        {
+            id: 'editorial', name: '红白社论', desc: '红底白字标题条、粗线编者按，适合时评、深度报道与观点长文',
+            themeColor: '#c0392b', bookColor: '#8a8a8a',
+            rules: [
+                ['.editor-note', p => `border-top: 3px solid ${p.theme}; border-bottom: 1px solid ${p.theme};`],
+                ['.editor-note-inner', 'margin: 0px; padding: 14px 12px; border-left: none; border-right: none;'],
+                ['.editor-note-label', p => `display: inline-block; padding: 2px 10px; background-color: ${p.theme}; color: #ffffff; font-weight: bold; letter-spacing: 2px; line-height: 1.6;`],
+                ['.dot-decoration', TPL_NO_GAP],
+                ['.section-title span', p => `display: inline-block; padding: 3px 14px; background-color: ${p.theme}; color: #ffffff; letter-spacing: 1px; line-height: 1.6;`],
+                ['.divider-rule', p => `border-top: 1px solid ${p.tint(p.theme, 0.6)};`],
+                ['.divider-dot', p => `background-color: ${p.theme};`],
+                ['.body-para > span', 'color: #222222;'],
+                ['.body-para strong', p => `color: ${p.theme};`],
+                ['.quote-text', p => `border-left: 4px solid ${p.theme}; background-color: ${p.tint(p.theme, 0.94)};`],
+                ['.quote-para, .quote-cite', 'color: #555555;'],
+                ['th', p => `background-color: ${p.tint(p.theme, 0.9)};`]
+            ]
+        },
+        {
+            id: 'mint', name: '薄荷清新', desc: '圆角浅底卡片、胶囊标题、关键词下划线，适合教程、清单与生活方式',
+            themeColor: '#0f9d76', bookColor: '#5f7f72',
+            rules: [
+                ['.editor-note', p => `border: none; border-radius: 8px; padding: 0px; background-color: ${p.tint(p.theme, 0.93)};`],
+                ['.editor-note-inner', 'margin: 0px; padding: 16px 18px; border: none;'],
+                ['.editor-note-label', `font-weight: bold; letter-spacing: 2px; font-family: ${TPL_SANS};`],
+                ['.note-para span', `color: #4b5a54; font-family: ${TPL_SANS};`],
+                ['.dot-decoration', TPL_NO_GAP],
+                ['.section-title span', p => `display: inline-block; padding: 4px 18px; border-radius: 999px; background-color: ${p.tint(p.theme, 0.88)}; line-height: 1.6; font-family: ${TPL_SANS};`],
+                ['.divider-rule', p => `border-top: 1px dashed ${p.tint(p.theme, 0.6)};`],
+                ['.divider-dot', p => `background-color: ${p.theme};`],
+                ['.body-para > span', `color: #2f3a35; font-family: ${TPL_SANS};`],
+                ['.body-para strong', p => `border-bottom: 2px solid ${p.tint(p.theme, 0.6)};`],
+                ['.quote-text', p => `border-left: 3px solid ${p.theme}; border-radius: 6px; background-color: ${p.tint(p.theme, 0.94)};`],
+                ['.quote-para, .quote-cite', `color: #4b5a54; font-family: ${TPL_SANS};`],
+                ['.notes-header, li, td, th', `font-family: ${TPL_SANS};`],
+                ['th', p => `background-color: ${p.tint(p.theme, 0.9)};`]
+            ]
+        },
+        {
+            id: 'navy', name: '藏青商务', desc: '藏青配金线、黑体左标题，适合财经、行业分析与机构发布',
+            themeColor: '#1e3a5f', bookColor: '#6b7b8d',
+            rules: [
+                ['.editor-note', 'border-top: none; border-bottom: none; padding: 0px; background-color: #f5f7fa;'],
+                ['.editor-note-inner', 'margin: 0px; padding: 16px 18px; border-left: 4px solid #b08d57; border-right: none;'],
+                ['.editor-note-label', `font-weight: bold; letter-spacing: 3px; font-family: ${TPL_HEI};`],
+                ['.note-para span', 'color: #4a5568;'],
+                ['.dot-decoration', TPL_NO_GAP],
+                ['.section-title', 'text-align: left;'],
+                ['.section-title span', `display: block; font-size: 17px; line-height: 1.6; font-family: ${TPL_HEI};`],
+                ['.divider-rule', 'border-top: 1px solid #b08d57;'],
+                ['.divider-gap, .divider-dot', TPL_NO_GAP],
+                ['.body-para > span', 'color: #1f2a37;'],
+                ['.body-para strong', p => `color: ${p.theme};`],
+                ['.quote-text', 'border-left: 3px solid #b08d57; background-color: #f5f7fa;'],
+                ['.quote-para, .quote-cite', 'color: #4a5568;'],
+                ['th', 'background-color: #eef1f5;']
+            ]
+        }
+    ];
+
+    let currentTemplateId = 'weiwuming';
+
+    function getTemplate(id) {
+        return TEMPLATES.find(t => t.id === (id || currentTemplateId)) || TEMPLATES[0];
+    }
+
+    function tintColor(hex, ratio) {
+        const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+        if (!m) return hex;
+        const n = parseInt(m[1], 16);
+        const mix = c => Math.round(c + (255 - c) * ratio).toString(16).padStart(2, '0');
+        return '#' + mix(n >> 16) + mix((n >> 8) & 255) + mix(n & 255);
+    }
+
+    function templatePalette(tpl) {
+        return { theme: currentThemeColor, book: currentBookColor, bookLight: currentBookColorLight, paper: tpl.paper || '#ffffff', tint: tintColor };
+    }
+
+    // "a: b; c: d" → el.style.setProperty，逐项合并而不是整串替换，保留基础样式里模板没提到的属性。
+    // 基础样式里写的是 background 简写时改写简写本身：jsdom（skill 的 render_html.js 用它渲染）
+    // 在已有简写上再设 background-color 不会写回 style 属性，浏览器里两种写法结果相同。
+    function setStyleValue(el, prop, value, important) {
+        if (prop === 'background-color' && /(^|;)\s*background\s*:/i.test(el.getAttribute('style') || '')) prop = 'background';
+        el.style.setProperty(prop, value, important ? 'important' : '');
+    }
+
+    function applyDeclarations(el, css) {
+        String(css).split(';').forEach(function(decl) {
+            const i = decl.indexOf(':');
+            if (i < 0) return;
+            const prop = decl.slice(0, i).trim();
+            let value = decl.slice(i + 1).trim();
+            if (!prop || !value) return;
+            const important = /!important$/.test(value);
+            if (important) value = value.replace(/\s*!important$/, '');
+            setStyleValue(el, prop, value, important);
+        });
+    }
+
+    function templateWrapperStyle(tpl) {
+        if (!tpl.paper && !tpl.wrapper) return '';
+        return (tpl.paper ? 'background-color: ' + tpl.paper + '; ' : '') + (tpl.wrapper || '');
+    }
+
+    // root：预览区 #preview 或复制时的克隆体。copy 为 true 时额外把基础样式写死的白底换成模板底色。
+    function applyTemplate(root, copy) {
+        const tpl = getTemplate();
+        if (!copy) root.style.cssText = templateWrapperStyle(tpl);
+        if (!tpl.rules.length) return;
+        const p = templatePalette(tpl);
+        tpl.rules.forEach(function(rule) {
+            const css = typeof rule[1] === 'function' ? rule[1](p) : rule[1];
+            root.querySelectorAll(rule[0]).forEach(function(el) { applyDeclarations(el, css); });
+        });
+        if (copy && tpl.paper) {
+            root.querySelectorAll('[style]').forEach(function(el) {
+                if (el.tagName === 'IMG') return;
+                if (/^(#fff(fff)?|white|rgb\(255,\s*255,\s*255\))$/i.test(el.style.backgroundColor)) setStyleValue(el, 'background-color', tpl.paper);
+            });
+        }
+    }
+
+    function markSwatch(selector, color) {
+        let match = null;
+        document.querySelectorAll(selector).forEach(function(btn) {
+            if (!btn.dataset.color) return;
+            if (btn.dataset.color.toLowerCase() === color.toLowerCase()) match = btn;
+        });
+        return match;
+    }
+
+    function setTemplate(id) {
+        const tpl = getTemplate(id);
+        currentTemplateId = tpl.id;
+        try { localStorage.setItem('wwm-template', tpl.id); } catch (e) { /* 存储不可用时只影响下次打开的默认值 */ }
+        const select = document.getElementById('templateSelect');
+        if (select) select.value = tpl.id;
+        const hint = document.getElementById('templateDesc');
+        if (hint) hint.textContent = tpl.desc;
+        // 两个 set* 都会刷新预览；配色跟着模板走，之后仍可在色板上单独改
+        setBookColor(tpl.bookColor, markSwatch('.book-btn', tpl.bookColor) || document.getElementById('customBookColorPicker').parentElement);
+        setThemeColor(tpl.themeColor, markSwatch('.theme-btn', tpl.themeColor) || document.getElementById('customColorPicker').parentElement);
+    }
+
+    function renderTemplateOptions() {
+        const select = document.getElementById('templateSelect');
+        if (!select) return;
+        select.innerHTML = '';
+        TEMPLATES.forEach(function(tpl) {
+            const option = document.createElement('option');
+            option.value = tpl.id;
+            option.textContent = tpl.name;
+            option.title = tpl.desc;
+            select.appendChild(option);
+        });
+        select.value = currentTemplateId;
+    }
+
     function updatePreview() {
         const editor = document.getElementById('editor');
         const preview = document.getElementById('preview');
@@ -2418,6 +2647,9 @@
 
         // 应用主题色到预览区域
         applyThemeToPreview(preview, currentThemeColor);
+
+        // 公众号模板（默认「谓无名」不追加任何样式）
+        applyTemplate(preview, false);
 
         // 应用排版微调（没改过任何一项时这里什么都不做），再压上逐处覆盖
         applyStyleSettings(preview);
@@ -3424,13 +3656,19 @@
             }
         });
 
-        // 占位空行（<p><br/></p>，分割线内部除外）：固定 1em 高，
-        // 保证微信里段间距与预览一致，不会忽大忽小
+        // 占位空行（<p><br/></p>，分割线内部除外）：行距跟正文一致（2em @ 15px = 30px）。
+        // 空行的高度由这个内层 p 的行盒决定，外层 section 的 line-height 撑不动它，
+        // 所以段间距的覆盖规则也必须落到这个 p 上（见 STYLE_RULES.body）。
+        // 曾经写死 1em，导致粘贴进公众号后空行只有正文行距的一半，且与预览不符。
         clone.querySelectorAll('p').forEach(el => {
             if (el.querySelector('br') && !el.textContent.trim() && !el.closest('.divider')) {
+                // 段间空行（.para-gap 里的）要和正文同为 2em，否则粘进公众号只有半行高；
+                // 注释区、延伸阅读、staff 等处的占位空行不是段间距，维持原来的 1em。
+                const isParaGap = !!el.closest('.para-gap');
                 el.setAttribute(
                     'style',
-                    'margin: 0px; padding: 0px; box-sizing: border-box; line-height: 1em; font-size: 15px;'
+                    'margin: 0px; padding: 0px; box-sizing: border-box; line-height: ' +
+                    (isParaGap ? '2em' : '1em') + '; font-size: 15px;'
                 );
             }
         });
@@ -4173,12 +4411,12 @@
 
         // 图注卡片：行距/字距搬到最外层，各行 inherit（理由同预览区那段 CSS 的注释）
         clone.querySelectorAll('.book-info, .enbook-info, .jpbook-info').forEach(el => {
-            el.style.lineHeight = '1.6';
+            el.style.lineHeight = '1.3';
             el.style.letterSpacing = '0.544px';
         });
 
         clone.querySelectorAll('.person-info').forEach(el => {
-            el.style.lineHeight = '1.6';
+            el.style.lineHeight = '1.3';
         });
 
         clone.querySelectorAll('.book-info > *, .enbook-info > *, .jpbook-info > *, .person-info > *').forEach(el => {
@@ -4187,7 +4425,9 @@
             if (el.style.letterSpacing) el.style.letterSpacing = 'inherit';
         });
 
-        // 排版微调：必须排在全部既有规则之后，否则会被上面的 setAttribute('style', ...) 覆盖掉
+        // 模板与排版微调：必须排在全部既有规则之后，否则会被上面的 setAttribute('style', ...) 覆盖掉；
+        // 排版微调再排在模板之后，用户改过的项优先
+        applyTemplate(clone, true);
         applyStyleSettings(clone);
         applyBlockOverrides(clone, true);
 
@@ -4205,7 +4445,8 @@
             }
         });
 
-        return '<section class="article135" style="box-sizing: border-box; margin: 0 0px;">' + clone.innerHTML + '</section>';
+        return '<section class="article135" style="box-sizing: border-box; margin: 0 0px;' +
+               (templateWrapperStyle(getTemplate()) ? ' ' + templateWrapperStyle(getTemplate()) : '') + '">' + clone.innerHTML + '</section>';
     }
 
     // 手动选中 + Ctrl+C：走和「复制排版结果」同一条内联样式管线。
@@ -4282,9 +4523,9 @@
 
 [universal:${sampleImageBaseUrl}/91165dfbda0dfceb.jpg|舒群（1913–1989）|作家，代表作《没有祖国的孩子》]
 
-[origin:${sampleImageBaseUrl}/521c36bbccf08ded.jpg|赤崁楼前“郑成功议和图”雕塑与福康安平台碑|&#x6444;影：XXX,2018.5.16]
+[origin:${sampleImageBaseUrl}/521c36bbccf08ded.jpg|赤崁楼前“郑成功议和图”雕塑与福康安平台碑|摄影：XXX,2018.5.16]
 
-[origin:${sampleImageBaseUrl}/ab9353a30ea09aec.jpg|『国性爺合戦』|&#x8C4A;原国周，浮世绘，n×ncm，1872|（某某博物馆藏）]
+[origin:${sampleImageBaseUrl}/ab9353a30ea09aec.jpg|『国性爺合戦』|豊原国周，浮世绘，n×ncm，1872|（某某博物馆藏）]
 
 [universal:${sampleImageBaseUrl}/fe18879358d76317.jpg|『東洋平和の道』|导演：铃木重吉，编剧：铃木重吉/张迷生|上映：1936，片长：101 分钟]
 
@@ -5084,9 +5325,17 @@
 
     // 排版微调面板初始渲染
     renderTypoFields();
+
+    // 模板下拉框；恢复上次选用的模板（只存在本浏览器）
+    renderTemplateOptions();
+    (function restoreTemplate() {
+        let saved = '';
+        try { saved = localStorage.getItem('wwm-template') || ''; } catch (e) { /* 隐私模式等 */ }
+        if (saved && saved !== currentTemplateId && TEMPLATES.some(t => t.id === saved)) setTemplate(saved);
+        else document.getElementById('templateDesc').textContent = getTemplate().desc;
+    })();
 </script>
 
-<script type="module" src="formatter/ui.mjs"></script>
 
 </body>
 </html>
