@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260829">
     <link rel="shortcut icon" href="./favicon.svg?v=20260829">
     <script src="vendor/marked.min.js"></script>
+    <link rel="stylesheet" href="formatter/workbench.css">
     <style>
         :root {
             --theme-color: #3daad6;
@@ -141,8 +142,6 @@
             outline: 2px solid var(--azure);
             outline-offset: 2px;
         }
-
-        a.btn { text-decoration: none; }
 
         /* 主动作 = 落印：印泥红 */
         .btn-primary {
@@ -1398,14 +1397,14 @@
         .wx-content .book-info,
         .wx-content .enbook-info,
         .wx-content .jpbook-info {
-            line-height: 1.3;
+            line-height: 1.6;
             letter-spacing: 0.544px;
         }
 
         /* 人物/图片说明的各行本来就没写字距，所以这里只挂行距，
            字距保持不设置 —— 公众号那边调字距靠继承，本来就调得动 */
         .wx-content .person-info {
-            line-height: 1.3;
+            line-height: 1.6;
         }
 
         .wx-content .book-info .book-cover,
@@ -1738,12 +1737,6 @@
             }
         }
 
-        /* 顶栏多了「使用说明」入口，窄屏先收掉装饰性的 byline，
-           否则换行阈值会从 898px 抬到 1010px，900~1010 之间会多挤出一行 */
-        @media (max-width: 1020px) {
-            .byline { display: none; }
-        }
-
         @media (max-width: 900px) {
             .main-container { flex-direction: column; }
             .editor-panel, .preview-panel { width: 100%; height: 50%; }
@@ -1766,6 +1759,9 @@
         <span class="byline">Powered by Rolo</span>
     </div>
     <div class="toolbar-actions">
+        <button class="btn btn-secondary" id="importDocumentBtn" type="button">导入文档</button>
+        <button class="btn btn-secondary" id="apiSettingsBtn" type="button">API 设置</button>
+        <button class="btn btn-secondary" id="exportFilesBtn" type="button">导出文件</button>
         <div class="undo-redo-group">
             <button class="btn btn-undo-redo" id="undoBtn" onclick="undo()" disabled title="撤销 (Ctrl+Z)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
@@ -1776,10 +1772,6 @@
                 重做
             </button>
         </div>
-        <a class="btn btn-secondary" href="guide.html" title="查看简单上手步骤、AI 工具下载和图片上传说明">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            使用说明
-        </a>
         <button class="btn btn-secondary" onclick="toggleHelp()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             语法手册
@@ -1794,6 +1786,60 @@
         </button>
     </div>
 </header>
+
+<section class="document-workbench" aria-label="谓无名文档排版">
+    <input type="file" id="documentFile" accept=".docx,.pdf,.txt,.md" hidden>
+    <button type="button" class="document-drop" id="documentDrop">
+        <span class="import-mark" aria-hidden="true">稿</span>
+        <span><strong id="documentName">拖入 DOCX / PDF，生成谓无名排版</strong><small id="documentSummary">保留正文 · 编者按 · 关键词卡片 · 注释 · 延伸阅读</small></span>
+        <span class="document-file-label">选择文档 ↗</span>
+    </button>
+    <div class="document-actions">
+        <button type="button" class="btn btn-primary" id="generateDocumentBtn" disabled>生成谓无名排版</button>
+        <button type="button" class="btn btn-secondary" id="cancelDocumentBtn" hidden>停止</button>
+        <button type="button" class="document-detail-btn" id="documentDetailsBtn">文档信息 / 转换记录</button>
+        <span class="document-state" id="documentState" role="status" aria-live="polite">等待导入</span>
+    </div>
+    <div class="document-details" id="documentDetails" hidden>
+        <div class="document-metadata">
+            <label>作者<input id="documentAuthor" placeholder="自动识别，可补充"></label>
+            <label>来源<input id="documentSource" placeholder="原稿书名、篇名或刊物"></label>
+            <label>授权说明<input id="documentPermission" placeholder="仅填写已获授权的说明"></label>
+        </div>
+        <ol class="conversion-steps" id="conversionSteps" aria-label="转换进度">
+            <li data-step="import">读取文档</li><li data-step="structure">整理结构</li><li data-step="research">核实资料</li><li data-step="images">处理配图</li><li data-step="validate">校验排版</li>
+        </ol>
+        <div id="conversionReport" class="conversion-report"></div>
+    </div>
+</section>
+
+<dialog id="apiSettingsDialog" class="workbench-dialog">
+    <form id="apiSettingsForm">
+        <div class="dialog-heading"><div><span class="dialog-kicker">谓无名 · 文稿工作台</span><h2>配置你的 API</h2></div><button type="button" class="dialog-close" data-close="apiSettingsDialog" aria-label="关闭 API 设置">×</button></div>
+        <p class="dialog-intro">使用自己的模型生成编者按，检索资料并完成排版。文稿与密钥经本工作台中转调用，不在服务器保存。</p>
+        <div class="settings-grid">
+            <label>服务商<select id="apiProvider"></select></label>
+            <label>模型名称<input id="apiModel" required placeholder="填写你的账户可用模型"></label>
+            <label class="settings-wide">服务地址<input id="apiBaseUrl" type="url" required placeholder="https://服务地址/v1"></label>
+            <label class="settings-wide">API Key<input id="apiKey" type="password" required autocomplete="off" placeholder="仅保存在当前浏览器会话"></label>
+            <label class="settings-wide">扫描识别模型<input id="apiVisionModel" placeholder="选填；扫描 PDF 需要支持图片的模型"></label>
+        </div>
+        <details class="settings-section" open><summary>资料检索</summary><p>按既有排版规则核实人物、书籍版次和延伸阅读。</p><label>Tavily API Key<input id="searchApiKey" type="password" autocomplete="off" placeholder="填写 tvly-… 检索密钥"></label><a href="https://app.tavily.com" target="_blank" rel="noopener noreferrer">获取检索密钥 ↗</a></details>
+        <details class="settings-section"><summary>自己的图床</summary><p>原文配图和检索到的封面、人物图片上传到你的图床。未配置时按 skill 规则留空，并列入校对提醒。</p>
+            <label>图片存储<select id="imageHostKind"><option value="">暂未配置</option><option value="custom">自己的上传接口</option><option value="r2">Cloudflare R2</option></select></label>
+            <div id="customHostFields" hidden><label>上传地址<input id="imageHostEndpoint" type="url" placeholder="HTTPS 图片上传接口"></label><label>上传密钥<input id="imageHostKey" type="password" autocomplete="off" placeholder="Bearer Token（可选）"></label><small>接口接收 file 表单字段，返回 url 或 data.url。</small></div>
+            <div id="r2HostFields" class="settings-grid" hidden><label>账户 ID<input id="r2AccountId"></label><label>存储桶<input id="r2Bucket"></label><label>Access Key ID<input id="r2AccessKeyId" type="password" autocomplete="off"></label><label>Secret Access Key<input id="r2SecretAccessKey" type="password" autocomplete="off"></label><label class="settings-wide">图片公开域名<input id="r2PublicBase" type="url" placeholder="https://图片域名"></label></div>
+        </details>
+        <p class="settings-notice">调用费用由你的 API 账户承担。模型名可以修改；密钥仅保存在当前浏览器会话。</p>
+        <div class="dialog-footer"><span id="apiSettingsStatus" role="status"></span><button type="button" class="btn btn-secondary" id="testApiBtn">测试连接</button><button type="submit" class="btn btn-primary">保存配置</button></div>
+    </form>
+</dialog>
+
+<dialog id="exportFilesDialog" class="workbench-dialog export-dialog">
+    <div class="dialog-heading"><div><span class="dialog-kicker">保留可编辑文稿</span><h2>导出排版文件</h2></div><button type="button" class="dialog-close" data-close="exportFilesDialog" aria-label="关闭导出">×</button></div>
+    <p class="dialog-intro">三个文件均使用当前编辑区内容，HTML 与“复制排版结果”使用同一套渲染。</p>
+    <div class="export-options"><button type="button" data-export="md"><strong>Markdown 文稿</strong><small>可继续编辑与校对</small></button><button type="button" data-export="html"><strong>微信 HTML</strong><small>公众号内联样式</small></button><button type="button" data-export="preview"><strong>预览 HTML</strong><small>附复制排版结果按钮</small></button></div>
+</dialog>
 
 <!-- 主体 -->
 <div class="main-container">
@@ -1818,7 +1864,6 @@
             <code>[book:封面URL|书名|作者|出版社|年份]</code> 书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[enbook:封面URL|书名|作者|出版社|年份]</code> 英文书籍信息（封面URL可留空，居中，灰色12px，封面188px+阴影+▲）<br>
             <code>[jpbook:封面URL|书名|作者|出版社|年份]</code> 日语书籍信息（封面URL可留空，居中，灰色12px，封面189px+阴影+▲+『』）<br>
-            <code>正文书籍必填项</code> 作者、出版社、出版年份均不可留空；出版社后必须显示年份<br>
             <code>[universal:照片URL|第一行|第二行|...]</code> 通用图片标识（第一行自动加粗，照片+▲+多行文字，用|分行）<br>
             <code>[origin:图片URL|第一行|第二行|...]</code> 原图尺寸图片标识（第一行自动加粗，图片按原始尺寸显示，超宽时等比缩小）<br>
             <code>### 标题 / 作者</code> 章节大标题（居中，#7d90a8，在分割线上方）<br>
@@ -2155,7 +2200,7 @@
             { sel: '.body-para > span', css: 'fontSize',      key: 'fontSize',      unit: 'px' },
             { sel: '.body-para > span', css: 'fontFamily',    key: 'fontFamily' },
             { sel: '.body-para > span', css: 'letterSpacing', key: 'letterSpacing', unit: 'px' },
-            { sel: '.para-gap, .para-gap > p', css: 'lineHeight', key: 'blockSpacing',  unit: 'em' }
+            { sel: '.para-gap',         css: 'lineHeight',    key: 'blockSpacing',  unit: 'em' }
         ],
         quote: [
             { sel: '.quote-text',              css: 'lineHeight',    key: 'lineHeight' },
@@ -2452,7 +2497,6 @@
         });
     }
 
-    // 预处理 Markdown：自定义语法 → marked 可识别
     // 行内 Markdown：注释区/尾注区/目录区这类自定义 HTML 块不会经过 marked 的行内解析，
     // 需要自己把 *斜体* **粗体** 转成标签（英文书名斜体主要靠这里）
     function inlineMarkdown(text) {
@@ -2463,6 +2507,7 @@
             .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
     }
 
+    // 预处理 Markdown：自定义语法 → marked 可识别
     function preprocessMarkdown(md) {
         // 将 ^数字 / ^[数字 ...] 转换为带圈数字，与 ^① 效果相同
         const circledNums = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩',
@@ -2625,7 +2670,7 @@
             // 尾注区内容：所有非空行自动渲染为 end-notes 格式（12px灰色，行间距1，自动加・）
             if (inNoteSection) {
                 if (line.trim() === '') continue;
-                let text = line.replace(/^[-・]\s*/, '').trim();
+                let text = line.replace(/^\s*(?:-\s*)?・?\s*/, '').trim();
                 result.push('<div class="end-notes"><p>・' + inlineMarkdown(text) + '</p></div>');
                 continue;
             }
@@ -3379,19 +3424,13 @@
             }
         });
 
-        // 占位空行（<p><br/></p>，分割线内部除外）：行距跟正文一致（2em @ 15px = 30px）。
-        // 空行的高度由这个内层 p 的行盒决定，外层 section 的 line-height 撑不动它，
-        // 所以段间距的覆盖规则也必须落到这个 p 上（见 STYLE_RULES.body）。
-        // 曾经写死 1em，导致粘贴进公众号后空行只有正文行距的一半，且与预览不符。
+        // 占位空行（<p><br/></p>，分割线内部除外）：固定 1em 高，
+        // 保证微信里段间距与预览一致，不会忽大忽小
         clone.querySelectorAll('p').forEach(el => {
             if (el.querySelector('br') && !el.textContent.trim() && !el.closest('.divider')) {
-                // 段间空行（.para-gap 里的）要和正文同为 2em，否则粘进公众号只有半行高；
-                // 注释区、延伸阅读、staff 等处的占位空行不是段间距，维持原来的 1em。
-                const isParaGap = !!el.closest('.para-gap');
                 el.setAttribute(
                     'style',
-                    'margin: 0px; padding: 0px; box-sizing: border-box; line-height: ' +
-                    (isParaGap ? '2em' : '1em') + '; font-size: 15px;'
+                    'margin: 0px; padding: 0px; box-sizing: border-box; line-height: 1em; font-size: 15px;'
                 );
             }
         });
@@ -4134,12 +4173,12 @@
 
         // 图注卡片：行距/字距搬到最外层，各行 inherit（理由同预览区那段 CSS 的注释）
         clone.querySelectorAll('.book-info, .enbook-info, .jpbook-info').forEach(el => {
-            el.style.lineHeight = '1.3';
+            el.style.lineHeight = '1.6';
             el.style.letterSpacing = '0.544px';
         });
 
         clone.querySelectorAll('.person-info').forEach(el => {
-            el.style.lineHeight = '1.3';
+            el.style.lineHeight = '1.6';
         });
 
         clone.querySelectorAll('.book-info > *, .enbook-info > *, .jpbook-info > *, .person-info > *').forEach(el => {
@@ -5046,6 +5085,8 @@
     // 排版微调面板初始渲染
     renderTypoFields();
 </script>
+
+<script type="module" src="formatter/ui.mjs"></script>
 
 </body>
 </html>
