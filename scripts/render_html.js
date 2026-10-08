@@ -38,7 +38,7 @@ function fail(code, msg) { console.error('✗ ' + msg); process.exit(code); }
 // ---------- 参数解析 ----------
 const argv = process.argv.slice(2);
 let input = null, output = null, preview = false, editorPath = null;
-let themeColor = null, bookColor = null;
+let themeColor = null, bookColor = null, templateId = null;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === '-o') output = argv[++i];
@@ -46,9 +46,13 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--editor') editorPath = argv[++i];
   else if (a === '--theme-color') themeColor = argv[++i];
   else if (a === '--book-color') bookColor = argv[++i];
+  else if (a === '--template') templateId = argv[++i];
   else if (!a.startsWith('-')) input = a;
 }
-if (!input) fail(2, '用法: node render_html.js <article.md> [-o out.html] [--preview]');
+if (!input) fail(2, '用法: node render_html.js <article.md> [-o out.html] [--preview] [--template <模板id>] [--theme-color #rrggbb] [--book-color #rrggbb]');
+for (const [flag, value] of [['--theme-color', themeColor], ['--book-color', bookColor]]) {
+  if (value !== null && !/^#[0-9a-f]{6}$/i.test(value || '')) fail(2, `${flag} 需要 #rrggbb 格式的颜色，收到: ${value}`);
+}
 if (!fs.existsSync(input)) fail(2, '找不到输入文件: ' + input);
 if (!output) output = input.replace(/\.md$/i, '') + '.html';
 
@@ -111,11 +115,21 @@ const md = fs.readFileSync(input, 'utf8');
 const previewEl = document.getElementById('preview');
 if (!previewEl) fail(1, '编辑器页面里没有 #preview 元素');
 
-if (themeColor) window.currentThemeColor = themeColor;
+// 模板（新版网页编辑器才有 TEMPLATES / setTemplate）。先套模板，再让 --theme-color / --book-color 覆盖它的配色。
+if (templateId) {
+  if (typeof window.setTemplate !== 'function') {
+    fail(2, `编辑器 ${editorFile} 不支持 --template，请用 --editor 指向带模板的网页版 index.html`);
+  }
+  const ids = window.eval('TEMPLATES.map(t => t.id)');
+  if (!ids.includes(templateId)) fail(2, `没有模板 ${templateId}，可选: ${ids.join(', ')}`);
+  window.setTemplate(templateId);
+}
+// currentThemeColor / currentBookColor 在编辑器里是 let 声明的全局变量，不挂在 window 上，
+// 必须在页面作用域里赋值，generateInlineStyledHtml 才读得到（以前写 window.xxx 不生效）。
+if (themeColor) window.eval(`currentThemeColor = ${JSON.stringify(themeColor)}`);
 if (bookColor) {
-  window.currentBookColor = bookColor;
-  window.currentBookColorLight = window.computeLighterColor
-    ? window.computeLighterColor(bookColor) : bookColor;
+  window.eval(`currentBookColor = ${JSON.stringify(bookColor)};` +
+    'currentBookColorLight = typeof computeLighterColor === "function" ? computeLighterColor(currentBookColor) : currentBookColor;');
 }
 
 let styled;
@@ -124,7 +138,7 @@ try {
   let bodyHtml = window.marked.parse(processed);
   bodyHtml = window.postprocessHtml(bodyHtml);
   previewEl.innerHTML = bodyHtml;
-  window.applyThemeToPreview(previewEl, window.currentThemeColor);
+  window.applyThemeToPreview(previewEl, window.eval('currentThemeColor'));
   styled = window.generateInlineStyledHtml(previewEl);
 } catch (e) {
   fail(1, '渲染失败: ' + (e.stack || e));
