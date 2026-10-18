@@ -241,4 +241,6 @@ node scripts/render_html.js article.md --preview
 
 ## License
 
-MIT
+本仓库以 [MIT 协议](LICENSE) 开源。
+
+第三方组件按其原许可证提供：`vendor/marked.min.js` 为 [marked](https://github.com/markedjs/marked)（Copyright (c) 2011-2025 Christopher Jeffrey，MIT），版权声明保留在文件头部。
