@@ -259,7 +259,7 @@
     <ol>
         <li><a href="#part1">直接用在线工作台</a></li>
         <li><a href="#part2">让 AI 帮你排版：下载工具、安装技能</a></li>
-        <li><a href="#part3">文章有图片：准备 PicGo 图床</a></li>
+        <li><a href="#part3">文章有图片：准备免费图床</a></li>
         <li><a href="#part4">遇到问题怎么办</a></li>
     </ol>
 </nav>
@@ -300,17 +300,17 @@ https://github.com/Roloyty/weiwuming-wechat-formatter</code></pre>
 <pre><code>请用谓无名排版技能，把这份 Word 文档排成公众号文章，保留原文和图片，并打开排版结果让我检查。</code></pre>
 <p>完成后，查看生成的排版页面，按提示复制到公众号后台。想调整哪里，继续告诉 AI 即可。</p>
 
-<h2 id="part3">三、文章有图片：准备 PicGo 图床</h2>
-<p>图床就是<strong>存放图片、生成图片链接的地方</strong>。Word 里有图片时，AI 可以借助 PicGo 上传图片，让排版后的文章正常显示它们。纯文字文章可以跳过这一步。</p>
+<h2 id="part3">三、文章有图片：准备免费图床</h2>
+<p>图床就是<strong>存放图片、生成图片链接的地方</strong>。公众号只认网址，认不出你电脑里的图片，所以图片要先传到图床。AI 开始排版前会自动检查，没配过的话它会带你配置。也可以提前准备好，只要 3 分钟，不用安装软件：</p>
 <ol class="steps">
-    <li>打开 <a href="https://picgo.app/" target="_blank" rel="noopener">PicGo 官网</a>，下载并安装 Windows 版。</li>
-    <li>打开 PicGo，注册或登录账号，使用自带的 <strong>PicGo Cloud 免费图床</strong>。</li>
-    <li>保持 PicGo 开着，告诉 AI：「我已经登录 PicGo，请帮我检查图片上传，并继续排版。」</li>
+    <li>打开<a href="https://www.superbed.cn/login" target="_blank" rel="noopener">聚合图床登录页</a>，点「微信扫码登录」。不用微信的话，点页面底部「立即注册」用邮箱注册。</li>
+    <li>登录后打开<a href="https://www.superbed.cn/dashboard/settings" target="_blank" rel="noopener">设置页</a>，找到「API密钥管理」，生成并复制 API Key。</li>
+    <li>把密钥发给 AI，告诉它：「这是我的聚合图床密钥，请帮我配置图床。」它会先试传一张测试图，确认没问题再保存。</li>
 </ol>
 <div class="note">
-    <strong>免费空间够用吗？</strong>登录后可使用 <a href="https://picgo.app/pricing/" target="_blank" rel="noopener">500 MB 免费图床空间</a>，少量日常文章配图一般够用，用满后再考虑升级。
+    <strong>免费空间够用吗？</strong>免费版有 500 MB 空间，每小时可传 100 张，日常文章配图一般够用。密钥相当于上传钥匙，只发给帮你排版的 AI，不要发到公开场合；泄露了可以回到设置页重新生成。
 </div>
-<p>第一次可以先拖一张图片到 PicGo，确认能上传成功。后续文章里的图片交给 AI 处理即可。</p>
+<p>已经在用 PicGo 的话不用换，保持 PicGo 开着，告诉 AI「请帮我检查图片上传」即可。</p>
 
 <h2 id="part4">四、遇到问题怎么办</h2>
 <div class="tablewrap">
@@ -318,7 +318,7 @@ https://github.com/Roloyty/weiwuming-wechat-formatter</code></pre>
     <thead><tr><th scope="col">遇到的情况</th><th scope="col">可以这样做</th></tr></thead>
     <tbody>
         <tr><td>AI 说找不到技能</td><td>重新打开 AI 工具，把技能链接发给它，说「请检查这个技能是否安装成功」。</td></tr>
-        <tr><td>图片上传失败</td><td>确认 PicGo 已打开并登录，把报错发给 AI，说「请帮我检查 PicGo 图片上传」。</td></tr>
+        <tr><td>图片上传失败</td><td>把报错发给 AI，说「请帮我检查图床」。用 PicGo 的话，先确认它已打开并登录。</td></tr>
         <tr><td>粘贴后图片不显示</td><td>告诉 AI「公众号里的图片不显示，请检查图片链接并重新生成排版」。</td></tr>
         <tr><td>字体、行距不满意</td><td>在工作台用「排版微调」调整后重新复制，或直接告诉 AI 你想要的效果。</td></tr>
     </tbody>

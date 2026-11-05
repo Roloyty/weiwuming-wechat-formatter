@@ -39,7 +39,7 @@ Requirements: Python 3; Node.js 18+ with the bundled dependencies; LibreOffice/s
 - Do not search online to fill missing book/person/publication data — **exception: keyword blocks and extended reading recommendations always require web search** to find accurate person, book, event, and photo information.
 - Do not invent placeholders such as `https://placeholder`, `[待确认]`, or `[信息缺失]` in the formatted article.
 - If an image has no usable hosted URL, do not output standalone image syntax for it.
-- **Keyword block images are downloaded to a local `images/` folder, then uploaded to the user's own image host** via `python scripts/upload_image.py <图片...>`. The default backend is the user's PicGo Server; a user who has configured Cloudflare R2 uploads there instead. Either way the destination and the credentials belong to the user, and this skill stores no image-host credentials of its own. Fill the returned public URL into the syntax block (e.g. `[book:https://cdn.example.com/book.jpg|书名|作者|出版社|年份]`). If PicGo is unavailable or upload fails, leave the image field empty and report it in `校对提醒`.
+- **Keyword block images are downloaded to a local `images/` folder, then uploaded to the user's own image host** via `python scripts/upload_image.py <图片...>`. The backend is whichever the user has set up: their own 聚合图床 or ImgBB account, Cloudflare R2 bucket, or PicGo Server. The destination and the credentials always belong to the user, and this skill provides no shared image host. Check the image host before starting image work (see **Image-Host Detection** below). Fill the returned public URL into the syntax block (e.g. `[book:https://cdn.example.com/book.jpg|书名|作者|出版社|年份]`). If no image host is available or upload fails, leave the image field empty and report it in `校对提醒`.
 - For book/reading-book blocks that are already present in the source but lack a cover URL, search + download + upload as above; only if no image can be found, leave the image field empty (e.g. `[book:|书名|作者|出版社|年份]`).
 - If typos, grammar issues, punctuation issues, or political/compliance risks are found, keep the formatted article faithful to the source and report the issues after the markdown under `校对提醒`.
 
@@ -148,6 +148,30 @@ These blocks should appear directly after the preceding content, without any int
   3. **出版社官网 / Google Books** — for English books and to verify edition metadata (出版社、年份、译者).
   - Book metadata (作者/译者/出版社/年份) must match the actual edition whose cover is used; verify on the source page, not from memory.
 
+#### Image-Host Detection
+
+Run this once per job, before searching for or downloading any image:
+
+```bash
+python <SKILL_ROOT>/scripts/upload_image.py --check --json
+```
+
+Act on the `state` field. Exit code 0 means `ready`; exit code 2 covers the other two.
+
+- `ready` → continue without mentioning it.
+- `not_configured` → the user has never set up an image host and may not know what one is. Before doing any image work:
+  1. Run `python <SKILL_ROOT>/scripts/setup_image_host.py` and show the user its output in full, keeping every link. It explains what an image host is and gives the signup and API-key links. Do not paraphrase it into jargon, and do not make the user read `references/image-host.md`.
+  2. Ask whether to set it up now or skip images for this article. If they skip, continue the job, leave every image field empty, and do not ask again during this job.
+  3. If the user sends you the key, save it with the key on **stdin**, never as a command-line argument:
+     ```bash
+     printf '%s' '<密钥>' | python <SKILL_ROOT>/scripts/setup_image_host.py --save --provider superbed
+     ```
+     In Windows PowerShell: `'<密钥>' | python <SKILL_ROOT>/scripts/setup_image_host.py --save --provider superbed`. The command checks the key, uploads a 1-pixel test image to the user's own account, and only then saves. Never repeat the key in your replies, and never write it to any other file, including the article's project folder.
+  4. Exit code 0 → say it worked and continue. Exit code 1 → the key was rejected; ask them to copy it again. Exit code 2 → the host could not be reached; offer the backup with `setup_image_host.py --provider imgbb`, or skip images.
+  - Never register an account or fetch a key on the user's behalf, and do not open a browser unless they ask. Signing up is theirs to do; your part is to give them the link and wait.
+  - If nobody can answer (a non-interactive run), do not wait: continue with empty image fields and put the setup output in `校对提醒`.
+- `unavailable` → they have a host that is not working right now (PicGo closed, key revoked, network down). Tell them the `message`, and do not send them through signup or switch backends on your own. If they cannot fix it now, continue with empty image fields and report it in `校对提醒`.
+
 #### Image Download + Image-Host Upload
 
 - **Download** each image to the `images/` directory under the same project folder using Bash (`curl -L -o` or PowerShell `Invoke-WebRequest`).
@@ -162,15 +186,16 @@ These blocks should appear directly after the preceding content, without any int
   python <SKILL_ROOT>/scripts/upload_image.py images/*.jpg
   # 每行输出「本地路径<TAB>公网URL」；--json 输出 JSON 映射
   ```
-  - Two backends are available and both upload to the **user's own** host: `picgo` (default) and `r2` (optional, direct to the user's Cloudflare R2 bucket). The backend is resolved in this order: `--backend picgo|r2` → `WEIWUMING_IMAGE_BACKEND` → the `"backend"` field in the config file → automatic (`r2` when all five R2 keys are present, otherwise `picgo`). Do not switch backends on the user's behalf; just use whatever resolves.
+  - Four backends are available and all upload to the **user's own** host: `superbed` (聚合图床, recommended for beginners), `imgbb`, `r2` (the user's Cloudflare R2 bucket), and `picgo` (the user's PicGo Server). The backend is resolved in this order: `--backend <name>` → `WEIWUMING_IMAGE_BACKEND` → the `"backend"` field in the config file → automatic (`r2` when all five R2 keys are present, then `superbed`, then `imgbb` when a key is saved, otherwise `picgo`). Do not switch backends on the user's behalf; just use whatever resolves.
+  - For `superbed` / `imgbb`: the key lives in `~/.weiwuming/image-host.json` or the `SUPERBED_TOKEN` / `IMGBB_TOKEN` environment variables, and `setup_image_host.py --save` writes it. These are the user's own credentials — never print, echo, or copy them anywhere.
   - For `picgo`: users must configure and select their own image host in PicGo, then keep PicGo Server running. The default API is `http://127.0.0.1:36677/upload`; override it with `PICGO_API_URL` or `~/.weiwuming/image-host.json` (see `references/image-host.md`).
   - For `r2`: users supply `account_id`, `access_key_id`, `secret_access_key`, `bucket` and `domain` through `~/.weiwuming/image-host.json` or the `R2_*` environment variables. These are the user's own credentials — never print, echo, or copy them anywhere.
-  - Run `python <SKILL_ROOT>/scripts/upload_image.py --check` before the first upload; it checks whichever backend is active. If PicGo Server authentication is enabled, configure `PICGO_SERVER_SECRET` or `picgo.server_secret` in the local config file.
-  - If the active backend is `picgo` and PicGo is not configured, run `python <SKILL_ROOT>/scripts/setup_picgo.py --status`. (`setup_picgo.py` only concerns the PicGo backend; it does nothing for R2.) When PicGo Core CLI 2.0+ is installed and the user chooses PicGo Cloud, offer `--login` for the official browser OAuth flow. **Do not open the browser without the user's confirmation.** OAuth login configures PicGo Cloud only; GitHub/S3/OSS/COS and other third-party uploaders still require their own credentials through `--configure-uploader` or PicGo GUI.
+  - If PicGo Server authentication is enabled, configure `PICGO_SERVER_SECRET` or `picgo.server_secret` in the local config file.
+  - If the user chooses PicGo, run `python <SKILL_ROOT>/scripts/setup_picgo.py --status`. (`setup_picgo.py` only concerns the PicGo backend; it does nothing for the others.) When PicGo Core CLI 2.0+ is installed and the user chooses PicGo Cloud, offer `--login` for the official browser OAuth flow. **Do not open the browser without the user's confirmation.** OAuth login configures PicGo Cloud only; GitHub/S3/OSS/COS and other third-party uploaders still require their own credentials through `--configure-uploader` or PicGo GUI.
   - `setup_picgo.py --sync-config` is optional and explicit because the first cloud sync may upload the local PicGo configuration and conflicts require interactive resolution. Never run it automatically.
   - Remote http(s) URLs passed in are returned as-is. Local-image results are cached in `~/.weiwuming/upload-cache.json`, isolated by backend instance and content hash (the older `picgo-upload-cache.json` is still read as a fallback).
   - Cache write failure is only a warning: keep and report the successful URLs instead of retrying and uploading duplicates.
-  - Exit code 2 = invalid configuration or the image host is unavailable → leave image fields empty and tell the user which backend failed, pointing at `references/image-host.md`.
+  - Exit code 2 = no image host configured, invalid configuration, or the image host is unavailable → handle it as in **Image-Host Detection**, leave image fields empty, and tell the user what failed.
 - **Image field in syntax**: fill the returned public URL into the image/cover field:
   - `[book:<公网URL>|书名|作者|出版社|年份]`
   - `[universal:<公网URL>|姓名|身份/简介]`
@@ -239,6 +264,8 @@ These blocks should appear directly after the preceding content, without any int
 - This footer block is mandatory for all articles, regardless of whether the source contains it.
 
 ## Workflow
+
+0. Check the image host as described in **Image-Host Detection**, so a user who needs to set one up finds out before the work starts rather than after.
 
 1. Detect input type.
    - For `.docx`, run `python scripts/extract_docx.py <file.docx>`.
@@ -343,7 +370,8 @@ If issues exist, list them with source snippets and a concise reason:
 - 人物信息存疑：<姓名> 生卒年在 Wikipedia 与 Kotobank 记载不一致，已采用 Kotobank。
 - 图片下载失败：<关键词>，未找到可用图片源。
 - 图床上传失败：`images/xxx.jpg`，语法块图片字段已留空；请确认当前图床后端可用后重跑 `scripts/upload_image.py`。
-- 图床不可用：`upload_image.py` 退出码 2，请运行 `--check` 并检查 `~/.weiwuming/image-host.json`；PicGo 后端如尚未配置，可先运行 `setup_picgo.py --status`，PicGo Cloud 用户可在确认后运行 `--login`。
+- 图床未配置：本次图片字段已留空。配置步骤和免费申请链接：<粘贴 `setup_image_host.py` 的输出>；配好后告诉我，我把图片补上。
+- 图床不可用：<`--check --json` 返回的 message>，本次图片字段已留空；修好后告诉我，我把图片补上。
 ```
 
 ## Word Extraction Notes
