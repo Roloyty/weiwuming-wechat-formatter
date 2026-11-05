@@ -1,28 +1,99 @@
 # 图床上传配置
 
-公众号编辑器无法访问 `./images/x.jpg` 这类本地路径，本地图必须先换成公网 URL。`scripts/upload_image.py` 提供两种后端：
+公众号编辑器无法访问 `./images/x.jpg` 这类本地路径，本地图必须先换成公网 URL。`scripts/upload_image.py` 提供以下后端：
 
-| 后端 | 说明 | 凭据存放 |
+| 后端 | 适合谁 | 凭据存放 |
 |---|---|---|
-| `picgo`（默认） | 把路径交给用户自己的 PicGo Server，由 PicGo 当前选中的图床完成上传 | PicGo 自己的配置，本 Skill 完全不接触 |
-| `r2`（可选） | 用 S3 兼容接口直传用户自己的 Cloudflare R2 存储桶 | 本地 `~/.weiwuming/image-host.json` 或环境变量 |
+| `superbed`（新手推荐） | 没配过图床的人。注册聚合图床、复制一个密钥即可，不用装软件 | 本地 `~/.weiwuming/image-host.json` 或环境变量 |
+| `imgbb`（备用） | 聚合图床用不了时的备选 | 同上 |
+| `r2` | 有自己的 Cloudflare R2 存储桶和域名 | 同上 |
+| `picgo` | 已经在用 PicGo 的人 | PicGo 自己的配置，本 Skill 完全不接触 |
 
-两种后端都上传到**用户自己的**图床，本 Skill 不提供也不代管任何公共图床。
+所有后端都上传到**用户自己的**账号，本 Skill 不提供也不代管任何公共图床。
+
+## 没配过图床？
+
+```bash
+python <SKILL_ROOT>/scripts/setup_image_host.py
+```
+
+它会解释图床是什么，并给出注册和申请密钥的直达链接。拿到密钥后运行：
+
+```bash
+python <SKILL_ROOT>/scripts/setup_image_host.py --save --provider superbed
+```
+
+密钥在终端里隐藏输入，也可以从标准输入传入。脚本会先校验密钥，再传一张 1 像素测试图走通上传，都通过才保存；所以你的图库里会多一张测试图，可以删掉。
+
+## 检测状态
+
+```bash
+python <SKILL_ROOT>/scripts/upload_image.py --check --json
+```
+
+| `state` | 含义 | 该怎么办 |
+|---|---|---|
+| `ready` | 图床可用 | 直接上传 |
+| `not_configured` | 从没配过图床 | 运行 `setup_image_host.py` |
+| `unavailable` | 配过但现在用不了（PicGo 没开、密钥失效、网络不通） | 看 `message` 修复，不需要重新注册 |
+
+退出码：`ready` 为 0，其余为 2。电脑上有 PicGo 配置文件的人只算 `unavailable`，不会被引导去注册别的图床。
 
 ## 选哪个后端
 
 按以下顺序决定，先命中先生效：
 
-1. 命令行 `--backend picgo|r2`
+1. 命令行 `--backend picgo|r2|superbed|imgbb`
 2. 环境变量 `WEIWUMING_IMAGE_BACKEND`
-3. 配置文件里的 `"backend"` 字段
-4. 自动：R2 五项配置齐全则用 `r2`，否则用 `picgo`
+3. 配置文件里的 `"backend"` 字段（`setup_image_host.py --save` 会写这里）
+4. 自动：R2 五项配置齐全则用 `r2`，其次是已保存密钥的 `superbed`、`imgbb`，都没有则用 `picgo`
 
-因此**不配 R2 的用户完全不受影响**，行为与以前一致。
+已经在用 PicGo 或 R2、又没有运行过 `--save` 的用户，行为与以前一致。
 
 ---
 
-# 后端一：PicGo Server
+# 后端：聚合图床 / ImgBB
+
+## 为什么默认推荐聚合图床
+
+以下是 2026-11-05 查证的情况，免费图床的规则变化很快，改动推荐前请重新核实。
+
+| 服务 | 结论 | 依据 |
+|---|---|---|
+| [聚合图床](https://www.superbed.cn/) | **推荐** | 免费 500 MB、每小时 100 次 API（官方 `/api/v1/plans/` 接口）；支持微信扫码登录；有付费档，不靠用爱发电；服务条款未限制商用；图片网址 `pic1.imgdb.cn` 有国内节点，但会 302 跳到 `files.superbed.cn`，实际由 Cloudflare 提供图片；2026-11-05 实测粘贴进公众号后台转存成功（一张书封） |
+| [ImgBB](https://api.imgbb.com/) | 备用 | 有官方 API，单张 32 MB；英文界面，海外服务，国内访问情况未验证 |
+| SM.MS | 不可用 | 已迁移到 S.EE，2026 年 2 月起不再开放免费注册 |
+| PICUI | 不选 | 条款规定免费套餐仅限非商用，且禁传未经授权的影视截图或封面、含二维码的图片；本 Skill 要传电影海报 |
+| 路过图床 | 不选 | 第三方评测称没有 API；官网解析到海外 IP |
+| 七牛云等对象存储 | 不适合新手 | 七牛有 10 GB 免费额度，但要实名认证；测试域名 30 天回收，长期使用要绑定备案域名 |
+| GitHub + jsDelivr | 不适合新手 | jsDelivr 在国内不稳定，还要先会用 GitHub |
+
+选择时看重国内可达：公众号后台粘贴文章时会去抓取外链图片，抓取失败图片就显示不出来，而老牌海外图床在这一步曾经失败率很高。
+
+## 配置文件
+
+一般用 `setup_image_host.py --save` 写入，也可以手工编辑 `~/.weiwuming/image-host.json`：
+
+```json
+{
+  "backend": "superbed",
+  "superbed": {"token": "你的 API Key"},
+  "imgbb": {"token": "你的 API key"}
+}
+```
+
+或用环境变量（优先于配置文件）：`SUPERBED_TOKEN`、`IMGBB_TOKEN`。
+
+## 接口
+
+- 聚合图床：`POST https://api.superbed.cn/upload`，表单字段 `token` + `file`，成功返回 `{"err":0,"url":"..."}`。[官方文档](https://www.superbed.cn/help)
+- ImgBB：`POST https://api.imgbb.com/1/upload?key=...`，表单字段 `image`，成功返回 `{"data":{"url":"..."}}`。[官方文档](https://api.imgbb.com/)
+- `--check` 发一个不带图片的上传请求：密钥无效会被明确拒绝，不会产生文件。
+- 上传时文件名换成内容 hash，本地文件名不会传上去。
+
+---
+
+# 后端：PicGo Server
 
 ## 工作方式
 
@@ -122,7 +193,7 @@ python <SKILL_ROOT>/scripts/upload_image.py --json images/*.jpg
 
 ---
 
-# 后端二：Cloudflare R2（可选）
+# 后端：Cloudflare R2
 
 适合不想常驻 PicGo GUI、或需要在没有桌面环境的机器上跑的用户。走 S3 兼容接口，AWS SigV4 签名，只用 Python 标准库，不需要装 boto3。
 
@@ -183,6 +254,18 @@ python <SKILL_ROOT>/scripts/upload_image.py --backend r2 images/example.jpg
 
 ## 常见问题
 
+### 粘贴进公众号后图片显示不出来
+
+公众号后台要抓取外链图片，抓取失败就显示不出来。先在公众号里删掉重新粘贴一次；反复失败就换一家图床：运行 `setup_image_host.py --provider imgbb`，然后重新上传。
+
+### 聚合图床 / ImgBB 提示不接受密钥
+
+密钥复制错了或已经重新生成过。回到申请页面复制最新的密钥，再运行一次 `--save`。
+
+### 聚合图床提示上传太频繁或空间不足
+
+免费档每小时 100 次、总共 500 MB。超过频率就等一小时再试。空间满了可以到图床后台清理旧图，清理后请删除 `~/.weiwuming/upload-cache.json`，否则重新排版时可能拿到已失效的网址。
+
 ### 无法连接 PicGo
 
 - 确认 PicGo 正在运行。
@@ -217,4 +300,5 @@ PicGo Server 已启用鉴权。请把同一个 shared secret 写入 `server_secr
 - 不要把 PicGo Server 暴露到公网；优先监听 `127.0.0.1`。
 - 如需监听局域网地址，应启用 Server secret 和防火墙限制。
 - 不要把 secret、图床 Token 或账号密钥提交到仓库。
+- `image-host.json` 里的密钥是明文，能以你的名义往图床上传。泄露后到图床后台重新生成即可。
 - 上传后的图片是公网资源，不要上传隐私或未公开图片。

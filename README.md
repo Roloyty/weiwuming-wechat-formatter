@@ -7,7 +7,8 @@
 - 解析 `.docx` 的标题、段落、样式、表格、脚注、尾注和图片关系。
 - 在安装 LibreOffice 时自动将 legacy `.doc` 转换为 `.docx`。
 - 生成编者按、章节标题、注释、作者简介、人物卡片、书籍卡片和延伸阅读等编辑器语法。
-- 将图片上传到用户自己的图床：默认交给用户的 PicGo Server，也可选择直传用户自己的 Cloudflare R2 存储桶。
+- 将图片上传到用户自己的图床：支持聚合图床、ImgBB、Cloudflare R2 和 PicGo。
+- 自动检测图床是否可用；没配过的用户会得到小白配置步骤和免费申请链接。
 - 使用随 Skill 打包的编辑器快照和本地 `marked`、`jsdom` 生成微信粘贴版 HTML。
 - 校验编者按首位、模块严格排序、公网图片 URL、语法块配对和未渲染的语法残留。
 - 将疑似错别字、标点和合规问题作为校对提醒列出，不静默修改原文。
@@ -21,7 +22,7 @@ Word / 文本
     ↓
 生成谓无名 Markdown
     ↓
-本地图片 → PicGo Server（或 R2 直传）→ 用户自己的图床 → 公网 URL
+本地图片 → 用户自己的图床（聚合图床 / ImgBB / R2 / PicGo）→ 公网 URL
     ↓
 编辑器同源渲染与校验
     ↓
@@ -37,14 +38,16 @@ Markdown + 微信粘贴版 HTML + 浏览器预览
 ├── assets/
 │   └── editor-index.html          # 谓无名编辑器快照，作为渲染兜底
 ├── references/
-│   ├── image-host.md              # 图床配置说明（PicGo / R2）
+│   ├── image-host.md              # 图床配置说明与选型依据
 │   └── syntax_rules.md            # 编辑器语法参考
 ├── scripts/
 │   ├── extract_docx.py            # Word 结构提取
+│   ├── setup_image_host.py        # 新手图床配置引导：申请链接、校验并保存密钥
 │   ├── setup_picgo.py             # PicGo CLI 状态、OAuth 与 uploader 配置引导
-│   ├── upload_image.py            # 图床上传客户端（PicGo / R2）
+│   ├── upload_image.py            # 图床检测与上传客户端
 │   └── render_html.js             # 编辑器同源 HTML 渲染与校验
 ├── tests/
+│   ├── test_setup_image_host.py    # 图床检测、配置引导与密钥上传测试
 │   ├── test_setup_picgo.py         # PicGo CLI 引导测试
 │   └── test_upload_image.py        # PicGo API 客户端模拟服务测试
 ├── package.json
@@ -56,7 +59,7 @@ Markdown + 微信粘贴版 HTML + 浏览器预览
 - Python 3.9+，只使用标准库。
 - Node.js 18+。
 - LibreOffice，可选，仅处理 `.doc` 时需要。
-- PicGo GUI 2.2+ 或提供兼容 `/upload`、`/heartbeat` 接口的 PicGo Server。
+- 一个图床账号，没有的话见下方「配置图床」。使用 PicGo 后端时需要 PicGo GUI 2.2+ 或兼容 `/upload`、`/heartbeat` 接口的 PicGo Server。
 
 安装 Node 依赖：
 
@@ -80,18 +83,42 @@ claude skills add https://github.com/Roloyty/weiwuming-wechat-formatter
 
 ## 配置图床
 
-上传支持两种后端，都指向**用户自己的**图床，本项目不提供也不代管任何公共图床：
+图床就是把图片放到网上、换来一个网址的地方。公众号只认网址，所以文章里的图片要先传到图床。
+
+### 没配过图床：3 分钟配置
+
+推荐[聚合图床](https://www.superbed.cn/)：支持微信扫码登录，中文界面，免费 500 MB，不用装软件。
+
+1. 打开 <https://www.superbed.cn/login>，微信扫码登录，或点「立即注册」用邮箱注册。
+2. 打开 <https://www.superbed.cn/dashboard/settings>，在「API密钥管理」生成并复制 API Key。
+3. 把密钥发给帮你排版的 AI 助手，或自己运行下面的命令后粘贴：
+
+```bash
+python scripts/setup_image_host.py --save --provider superbed
+```
+
+随时可以检查当前状态：
+
+```bash
+python scripts/upload_image.py --check
+```
+
+### 所有后端
+
+都指向**用户自己的**账号，本项目不提供也不代管任何公共图床：
 
 | 后端 | 说明 | 凭据存放 |
 |---|---|---|
-| `picgo`（默认） | 交给用户自己的 PicGo Server | PicGo 自己的配置，本项目不接触 |
-| `r2`（可选） | S3 兼容接口直传用户自己的 Cloudflare R2 | 本地 `~/.weiwuming/image-host.json` 或环境变量 |
+| `superbed`（新手推荐） | 用 API 密钥直传聚合图床 | 本地 `~/.weiwuming/image-host.json` 或环境变量 |
+| `imgbb`（备用） | 用 API 密钥直传 ImgBB | 同上 |
+| `r2` | S3 兼容接口直传用户自己的 Cloudflare R2 | 同上 |
+| `picgo` | 交给用户自己的 PicGo Server | PicGo 自己的配置，本项目不接触 |
 
-后端按此顺序决定：命令行 `--backend` → 环境变量 `WEIWUMING_IMAGE_BACKEND` → 配置文件 `"backend"` 字段 → 自动（R2 配全了用 R2，否则 PicGo）。**不配 R2 的用户行为与以前完全一致。**
+后端按此顺序决定：命令行 `--backend` → 环境变量 `WEIWUMING_IMAGE_BACKEND` → 配置文件 `"backend"` 字段 → 自动（R2 配全了用 R2，其次是已保存密钥的聚合图床、ImgBB，都没有则用 PicGo）。为什么推荐聚合图床，见 [`references/image-host.md`](references/image-host.md)。
 
-### PicGo（默认）
+### PicGo
 
-本项目不直连某个固定图床，也不保存图床 AK、SK、Token 或 Bucket。用户需要先在 PicGo 中配置自己的图床并将其设为当前图床。
+走这个后端时，本项目不接触图床 AK、SK、Token 或 Bucket。用户需要先在 PicGo 中配置自己的图床并将其设为当前图床。
 
 PicGo GUI 默认上传接口：
 
@@ -152,7 +179,7 @@ python scripts/upload_image.py --json images/*.jpg
 {"list":["图片绝对路径"]}
 ```
 
-### Cloudflare R2（可选）
+### Cloudflare R2
 
 适合不想常驻 PicGo GUI、或需要在没有桌面环境的机器上运行的用户。走 S3 兼容接口，AWS SigV4 签名，仅用 Python 标准库。
 
